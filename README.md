@@ -14,20 +14,20 @@ Early development of the gut ecosystem is crucial for lifelong health. While inf
 ![](Lifelines_Next_Pilot_FUP_scheme_used_timepoints_NEXT_logo.png)
 
 ## Data availability
-Sample information, basic phenotypes, family structure and raw sequences are available in the [EGA archive](https://ega-archive.org/studies/EGAS00001005969). To access the data, please follow [these instructions](https://github.com/GRONINGEN-MICROBIOME-CENTRE/Lifelines_NEXT/blob/main/NEXT_pilot_microbial_transmission_mother_infant/Data_Access_EGA.md).
+Sample information, basic phenotypes, family structure and raw sequences are available in the [EGA archive](https://ega-archive.org/studies/EGAS00001005969). To access the data, please follow [these instructions](https://github.com/GRONINGEN-MICROBIOME-CENTRE/LLNEXT_pilot/blob/main/Data_Access_EGA.md).
 Virus scaffolds composing the virus database generated from the samples can be found at [FigShare](https://doi.org/10.6084/m9.figshare.23926593)
 
 ## Code availability
-[Virome discovery pipeline:](https://github.com/GRONINGEN-MICROBIOME-CENTRE/Lifelines_NEXT/tree/main/NEXT_pilot_microbial_transmission_mother_infant/Virome_discovery)
+[Virome discovery pipeline:](https://github.com/GRONINGEN-MICROBIOME-CENTRE/LLNEXT_pilot/tree/main/Virome_discovery)
 All scripts used to profile human gut virome and microbiome
 ![](Virome_discovery/VirusDiscovery_scheme.png)
 
 
 
-[Building virus consensuses:](https://github.com/GRONINGEN-MICROBIOME-CENTRE/Lifelines_NEXT/tree/main/NEXT_pilot_microbial_transmission_mother_infant/Viral_alignments)
+[Building virus consensuses:](https://github.com/GRONINGEN-MICROBIOME-CENTRE/LLNEXT_pilot/tree/main/Viral_alignments)
 All scripts used to generate consensus sequences for vOTUs shared between mothers and their infants
 
-[Downstream analysis:](https://github.com/GRONINGEN-MICROBIOME-CENTRE/Lifelines_NEXT/tree/main/NEXT_pilot_microbial_transmission_mother_infant/Downstream_analysis)
+[Downstream analysis:](https://github.com/GRONINGEN-MICROBIOME-CENTRE/LLNEXT_pilot/tree/main/Downstream_analysis)
 All scripts used for processing abundance tables and distance matrices, including plots
 
 [Bacterial strains reconstruction:](https://github.com/GRONINGEN-MICROBIOME-CENTRE/Lifelines_NEXT/blob/main/NEXT_pilot_microbial_transmission_mother_infant/bacterial_strain_transmission_Strainphlan_4)
