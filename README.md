@@ -30,5 +30,5 @@ All scripts used to generate consensus sequences for vOTUs shared between mother
 [Downstream analysis:](https://github.com/GRONINGEN-MICROBIOME-CENTRE/LLNEXT_pilot/tree/main/Downstream_analysis)
 All scripts used for processing abundance tables and distance matrices, including plots
 
-[Bacterial strains reconstruction:](https://github.com/GRONINGEN-MICROBIOME-CENTRE/Lifelines_NEXT/blob/main/NEXT_pilot_microbial_transmission_mother_infant/bacterial_strain_transmission_Strainphlan_4)
+[Bacterial strains reconstruction:](https://github.com/GRONINGEN-MICROBIOME-CENTRE/LLNEXT_pilot/blob/main/bacterial_strain_reconstruction_Strainphlan_4.md)
 Code used to generate distance matrices for bacterial hosts of viruses of interest
