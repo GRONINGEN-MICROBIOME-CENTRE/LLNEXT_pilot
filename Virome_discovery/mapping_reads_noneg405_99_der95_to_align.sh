@@ -42,26 +42,10 @@ samtools view \
 
 samtools sort \
 	../BATCH${BATCH_ID}/${SAMPLE_ID}/${SAMPLE_ID}_all_vir_alignments.bam \
-	-o ../BATCH${BATCH_ID}/${SAMPLE_ID}/${SAMPLE_ID}_all_vir_alignments.sorted.bam
+	-o /scratch/umcg-sgarmaeva/ANALYSIS_NEXT_PILOT/clean_viral/for_Alex/VLP_to_viral_decontaminated/${SAMPLE_ID}_all_vir_alignments.sorted.bam
 
-samtools index \
-	../BATCH${BATCH_ID}/${SAMPLE_ID}/${SAMPLE_ID}_all_vir_alignments.sorted.bam
-
-samtools mpileup \
-	../BATCH${BATCH_ID}/${SAMPLE_ID}/${SAMPLE_ID}_all_vir_alignments.sorted.bam \
-	-A \
-	-f ../clean_viral/dbs/viral_decontaminated/viral_noneg405_99_der95_decontaminated.fasta \
-	-o ../clean_viral/VLP_to_viral_decontaminated/breadth_cov/${SAMPLE_ID}.A.cov.txt
-
-samtools idxstats \
-	../BATCH${BATCH_ID}/${SAMPLE_ID}/${SAMPLE_ID}_all_vir_alignments.sorted.bam \
-	> ../clean_viral/VLP_to_viral_decontaminated/counts_table/${SAMPLE_ID}.counts.idx.txt
-
-samtools flagstat \
-	../BATCH${BATCH_ID}/${SAMPLE_ID}/${SAMPLE_ID}_all_vir_alignments.sorted.bam \
-	 > ../clean_viral/VLP_to_viral_decontaminated/counts_table/${SAMPLE_ID}.flagstat.txt
-
-rm ../BATCH${BATCH_ID}/${SAMPLE_ID}/${SAMPLE_ID}_all_vir_alignments*
+rm ../BATCH${BATCH_ID}/${SAMPLE_ID}/${SAMPLE_ID}_all_vir_alignments.sam
+rm ../BATCH${BATCH_ID}/${SAMPLE_ID}/${SAMPLE_ID}_all_vir_alignments.bam
 
 gzip ../BATCH${BATCH_ID}/${SAMPLE_ID}/clean_reads/*.fastq
 
