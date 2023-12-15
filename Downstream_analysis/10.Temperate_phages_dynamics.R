@@ -260,6 +260,7 @@ temperate_by_BacSp_infant <- as.data.frame(t(temperate_by_BacSp_infant ))
 
 ## microbiome
 microbiome <- read.table('02.CLEAN_DATA/Microbiome_species_unfiltred.txt', sep='\t', header=T)
+MGS_metadata$bacterial_richness <- colSums(microbiome>0)[match(MGS_metadata$Short_sample_ID_bact, names(colSums(microbiome>0)))]
 microbiome <- microbiome[,MGS_metadata[MGS_metadata$Type=='Infant' & !is.na(MGS_metadata$infant_ever_never_breastfed),]$Short_sample_ID_bact]
 microbiome <- microbiome[rowSums(microbiome)!=0,]
 microbiome <- as.data.frame(t(microbiome))
@@ -373,10 +374,10 @@ temperate_richnes_phenos <- mixed_models_taxa(VLP_metadata[VLP_metadata$Type=="I
 #### FOR SUPPLEMENTARY TABLE ####
 write.table(temperate_richnes_phenos, '05.MANUSCRIPT/Supplementary_tables/MM_temperate_vOTUs_richness_phenos_infants.txt', sep='\t', quote=F)
 
-temprich_inf_virdiv_corr <- lmer(temperate_richness ~ DNA_CONC + Clean_reads + infant_mode_delivery + Age_months + infant_ever_never_breastfed + viral_alpha_diversity +(1|Individual_ID),REML=F, data = VLP_metadata[VLP_metadata$Type=="Infant",])
+temprich_inf_virdiv_corr <- lmer(temperate_richness ~ DNA_CONC + Clean_reads + infant_mode_delivery + Age_months + infant_ever_never_breastfed + viral_richness +(1|Individual_ID),REML=F, data = VLP_metadata[VLP_metadata$Type=="Infant",])
 as.data.frame(summary(temprich_inf_virdiv_corr)$coefficients)[,1:5]
 #### FOR SUPPLEMENTARY TABLE ####
-write.table(as.data.frame(summary(temprich_inf_virdiv_corr)$coefficients)[,1:5], '05.MANUSCRIPT/Supplementary_tables/MM_temperate_richness_feeding_mode_corrected_viral_diversity.txt', sep='\t', quote=F)
+write.table(as.data.frame(summary(temprich_inf_virdiv_corr)$coefficients)[,1:5], '05.MANUSCRIPT/Supplementary_tables/MM_temperate_richness_feeding_mode_corrected_viral_richness.txt', sep='\t', quote=F)
 
 temperate_RA_phenos <- mixed_models_taxa(VLP_metadata[VLP_metadata$Type=="Infant",grep('temperate_RA', colnames(VLP_metadata), invert = T)],
                                               "Short_sample_ID",
@@ -628,7 +629,7 @@ ggplot(MGS_metadata, aes(Timepoint, temperate_richness_MGS, fill=Type)) +
   labs(colour = "Type")
 
 
-fmod1_mgs_richness  = lmer(temperate_richness_MGS ~ infant_ever_never_breastfed + bacterial_alpha_diversity  + Age_days + DNA_CONC + Clean_reads + (1|NEXT_ID), REML = F, data = MGS_metadata[MGS_metadata$Type=="Infant" & !is.na(MGS_metadata$infant_ever_never_breastfed),])
+fmod1_mgs_richness  = lmer(temperate_richness_MGS ~ infant_ever_never_breastfed + bacterial_richness  + Age_days + DNA_CONC + Clean_reads + (1|NEXT_ID), REML = F, data = MGS_metadata[MGS_metadata$Type=="Infant" & !is.na(MGS_metadata$infant_ever_never_breastfed),])
 summary(fmod1_mgs_richness) #infant_ever_never_breastfednever_BF  3.880e+01  1.583e+01  2.526e+01   2.451 0.021508 * 
 #### FOR SUPPLEMENTARY TABLE ####
 write.table(as.data.frame(summary(fmod1_mgs_richness)$coefficients)[,1:5], '05.MANUSCRIPT/Supplementary_tables/MM_temperate_richness_MGS_feeding_mode.txt', sep='\t', quote=F)
