@@ -36,6 +36,8 @@ file_list = list.files(path=folder, pattern="*.txt")
 virus=lapply(paste0(folder, file_list), function(x) read.table(x, sep='\t', header=T))
 names(virus) <- gsub(".dist.txt", '', file_list)
 
+set.seed(111)
+
 ##############################
 # ANALYSIS
 ##############################
@@ -203,7 +205,9 @@ for (n in 1:NROW(virus) ) {
     }
     
   }
-  
+  print(virusName) 
+  print(dim(virusN)) # at least 1 dimension of the resulting virusN after grepping family 
+  #members should be >=7, otherwise permutation is senseless
   # storing p-value of permutations for every virus
   p_value_perm[names(virus[n])] <- as.data.frame(p_value)
 }
@@ -221,6 +225,15 @@ for (i in p_value_real$Virus) {
 # calculating FDR
 family_viruses <- p_value_real[!is.na(p_value_real$p_value_adj),]
 family_viruses$FDR <- p.adjust(family_viruses$p_value_adj, method = "BH")
+family_viruses$significance_level <- NA
+family_viruses[family_viruses$FDR > 0.05,]$significance_level <- 'ns'
+family_viruses[family_viruses$FDR <= 0.05,]$significance_level <- '*'
+family_viruses[family_viruses$FDR <= 0.01,]$significance_level <- '**'
+family_viruses[family_viruses$FDR <= 0.001,]$significance_level <- '***'
+
+p_value_real$FDR <- family_viruses$FDR[match(p_value_real$Virus, family_viruses$Virus)]
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(p_value_real, '05.MANUSCRIPT/Supplementary_tables/Virus_distances_comparison_pval_pperm_FDR.txt', sep='\t', quote=F, row.names=F)
 
 selected_viruses <- merge(selected_viruses, family_viruses[,c("Virus","FDR")], by='Virus', all.x = T)
 colnames(selected_viruses)[length(colnames(selected_viruses))] <- "FDR_dist_comparison"
@@ -239,8 +252,10 @@ if (identical(selected_viruses$Virus, names(unrelated_distances_virus))) {
 # adding the smallest non-zero Kimura distance to all distances (to use logarithmic scale in the plot)
 plot_distances$vector4analysis <- plot_distances$vector4analysis + min(plot_distances[plot_distances$vector4analysis!=0,]$vector4analysis)
 # showing only those viruses that have more than 5 pair-wise distances for related samples
-plot_distances_select <- plot_distances[ plot_distances$virus_name %in% names(virus)[lengths(mother_infant_distances_virus)>5] ,]
-
+#plot_distances_select <- plot_distances[ plot_distances$virus_name %in% names(virus)[lengths(mother_infant_distances_virus)>5] ,]
+plot_distances_select <- plot_distances
+plot_distances_select$significance_level <- family_viruses$significance_level[match(plot_distances_select$virus_name, family_viruses$Virus)]
+plot_distances_select[duplicated(plot_distances_select$virus_name),"significance_level"] <- NA
 # renaming contigs for easier perception:
 plot_distances_select$easy_name <- selected_viruses$ContigID_easy[match(plot_distances_select$virus_name, selected_viruses$Virus)]
 
@@ -256,7 +271,7 @@ myPalette <- myPalette[order(myPalette$easy_name),]
 # all virus strains
 p1 <- ggplot(plot_distances_select, aes(vector4analysis,easy_name, fill=factor4analysis)) + 
   labs (y="Viruses", x="Log-scaled\nKimura distance") + 
-  geom_sina(aes(fill=factor4analysis), size=1.3, alpha=0.8, shape=21, stroke=0) +
+  geom_sina(aes(color=factor4analysis), size=0.8, alpha=0.8) + 
   geom_boxplot(outlier.shape = NA, alpha=0.3) +
   theme_bw()+
   scale_x_log10() +
@@ -269,6 +284,9 @@ p1 <- ggplot(plot_distances_select, aes(vector4analysis,easy_name, fill=factor4a
   labs(fill="Kinship", color="") + geom_stripes(odd = "#33333333", even = "#00000000") +
   scale_fill_manual(labels = c("Related", "Unrelated"), 
                     values=c("#17B971", "#7d8bb1")) + 
+  scale_color_manual(labels = c("Related", "Unrelated"), 
+                     values=c("#17B971", "#7d8bb1")) +
+  geom_text(data=plot_distances_select[plot_distances_select$factor4analysis=='Related',], aes(label = significance_level, x = Inf, vjust=2, y = easy_name), size = 2, angle=270) +
   theme(axis.text.y = element_text(colour=myPalette$color),
         legend.position = "none")
 
@@ -300,23 +318,26 @@ p2 <- ggplot(N_pairwise_distance, aes(value, ContigID_easy, fill=variable) ) +
 
 combined_plot <- p1 + p2 +
   plot_layout(ncol = 2, nrow = 1, guides="collect", widths = c(4, 1.5)) + 
-  plot_annotation(title = "") & theme(legend.position = 'bottom') 
+  plot_annotation(title = "") & theme(legend.position = 'bottom') & guides(color="none")
 
 pdf('./04.PLOTS/Infant_virus_strain_all_more_than_7_fams_wilcox_less_final.pdf', width=9/2.54, height=17/2.54)
 combined_plot
 dev.off()
 
+### save before removing NS ones:
+write.table(plot_distances_select, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/ALL_Virus_distances_related_vs_unrelated.txt', sep='\t', quote=F, row.names=F)
+
 # those where distances are significantly different:
 
-myPalette$N_positive_families <- selected_viruses$N_positive_families[match(myPalette$Virus, selected_viruses$Virus)]
-myPalette <- myPalette[myPalette$FDR<0.05 & myPalette$N_positive_families >=7,]
+#myPalette$N_positive_families <- selected_viruses$N_positive_families[match(myPalette$Virus, selected_viruses$Virus)]
+myPalette <- myPalette[myPalette$FDR<0.05,]
 plot_distances_select <- plot_distances_select[plot_distances_select$virus_name %in% myPalette$Virus,]
 
 N_pairwise_distance <- N_pairwise_distance[N_pairwise_distance$Virus %in% myPalette$Virus,]
 
 p3 <- ggplot(plot_distances_select, aes(vector4analysis, easy_name, fill=factor4analysis)) + 
   labs (y="Viruses", x="Log-scaled\nKimura distance") + 
-  geom_sina(aes(fill=factor4analysis), size=0.9, alpha=0.8, shape=21, stroke=0) +
+  geom_sina(aes(color=factor4analysis), size=0.7, alpha=0.8) +
   geom_boxplot(outlier.shape = NA, alpha=0.3) +
   theme_bw()+
   scale_x_log10() +
@@ -329,6 +350,9 @@ p3 <- ggplot(plot_distances_select, aes(vector4analysis, easy_name, fill=factor4
   labs(fill="Kinship", color="") + geom_stripes(odd = "#33333333", even = "#00000000") +
   scale_fill_manual(labels = c("Related", "Unrelated"), 
                     values=c("#17B971", "#7d8bb1")) + 
+  scale_color_manual(labels = c("Related", "Unrelated"), 
+                     values=c("#17B971", "#7d8bb1")) +
+  geom_text(data=plot_distances_select[plot_distances_select$factor4analysis=='Related',], aes(label = significance_level, x = Inf, vjust=2, y = easy_name), size = 2.4, angle=270) +
   theme(axis.text.y = element_text(colour=myPalette$color),
         legend.position = "none")
 
@@ -354,7 +378,7 @@ p4 <- ggplot(N_pairwise_distance, aes(value, ContigID_easy, fill=variable) ) +
 
 combined_plot_significant <- p3 + p4 +
   plot_layout(ncol = 2, nrow = 1, guides="collect", widths = c(5, 1.5)) + 
-  plot_annotation(title = "") & theme(legend.position = 'bottom') 
+  plot_annotation(title = "") & theme(legend.position = 'bottom') & guides(color="none")
 
 pdf('./04.PLOTS/Infant_virus_strains_significant_more_than_7_fams_wilcox_less_final.pdf', width=7.7/2.54, height=14/2.54)
 combined_plot_significant
@@ -365,4 +389,8 @@ dev.off()
 write.table(plot_distances, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Virus_distances_related_vs_unrelated.txt', sep='\t', quote=F, row.names=F)
 write.table(selected_viruses, '02.CLEAN_DATA/List_viruses_selected_transmission_metadata.txt', sep='\t', quote=F, row.names=F)
 write.table(family_viruses, '02.CLEAN_DATA/List_viruses_results_checking_transmission.txt', sep='\t', quote=F, row.names = F)
+
+##### FOR VISUALIZATION #####
+write.table(plot_distances_select, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/4A_Virus_distances_related_vs_unrelated_FDR_significant.txt', sep='\t', quote=F, row.names=F)
+write.table(N_pairwise_distance, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/4A_Virus_N_pairwise_distance.txt',sep='\t', quote=F, row.names=F)
 
