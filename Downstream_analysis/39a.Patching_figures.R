@@ -16,7 +16,7 @@ library(corrplot)
 library(ggtree)
 library(pafr)
 library(gggenomes)
-
+library(ggtext)
 ##############################
 # Input data
 ##############################
@@ -60,7 +60,7 @@ BacSp_spp.scrs <- read.table("02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig1C_NMDS_v
 
 ##### for Figure 1D #######
 vOTUs_data.scores_mothers <- read.table("02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig1F_NMDS_scores_vOTUs_mothers.txt", sep='\t', header=T)
-# in order to be able to merge the legends for Fig1B and Fig1C together, we need to simulate one M9 point that will not 
+# in order to be able to merge the legends for Fig1D and Fig1E together, we need to simulate one P3 point that will not 
 # affect anything except legend
 vOTUs_data.scores_mothers["AP30000V",] <- NA
 vOTUs_data.scores_mothers["AP30000V","Type"] <- "Mother"
@@ -71,7 +71,7 @@ vOTUs_data.scores_mothers["AP30000V","NMDS2"] <- -0.017969975
 vOTUs_data.scores_mothers$Timepoint <- factor(vOTUs_data.scores_mothers$Timepoint, levels = c('P3', 'P7','B','M1', 'M2', 'M3'), ordered = T)
 
 vOTUs_centroids_mothers <- read.table("02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig1F_NMDS_centroids_vOTUs_mothers.txt", sep='\t', header=T)
-vOTUs_centroids$Timepoint <- factor(vOTUs_centroids$Timepoint, levels = c('P7','B','M1', 'M2', 'M3'), ordered = T)
+vOTUs_centroids_mothers$Timepoint <- factor(vOTUs_centroids_mothers$Timepoint, levels = c('P7','B','M1', 'M2', 'M3'), ordered = T)
 vOTUs_spp.scrs_mothers <- read.table("02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig1F_NMDS_vectors_vOTUs_mothers.txt", sep='\t', header=T)
 
 Peru1 <- met.brewer('Peru1')
@@ -83,11 +83,11 @@ BacSp_centroids_mothers <- read.table("02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig
 BacSp_spp.scrs_mothers <- read.table("02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig1E_NMDS_vectors_BacSp_mothers.txt", sep='\t', header=T)
 
 ##### for Figure 2A #######
-significance_annotation_F2A <- data.frame(label = c("p-value=4.1e-4\nbeta=4.7e-03", "p-value=1\nbeta=4e-04"),
+significance_annotation_F2A <- data.frame(label = c("p-value=4.1e-4, beta=4.7e-03", "p-value=1, beta=4e-04"),
                                             Type   = c("Infant", "Mother") )
 
 ##### for Figure 2B #######
-significance_annotation_F2B <- data.frame(label = c("p-value=1.6e-12\nbeta=2.7e-03", "p-value=0.3\nbeta=1.1e-02"),
+significance_annotation_F2B <- data.frame(label = c("p-value=1.6e-12, beta=2.7e-03", "p-value=0.3, beta=1.1e-02"),
                                           Type   = c("Infant", "Mother") )
 
 ##### for Figure 2C #######
@@ -96,18 +96,44 @@ Monet <- met.brewer('Monet')
 virstability_M1_stat <- read.table('02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig2A_N_retained_vOTUs_from_M1_infants_stat.txt', sep='\t', header=T)
 virstability_M1_stat$Timepoint <- factor(virstability_M1_stat$Timepoint, levels = c('M1', 'M2', 'M3', 'M6', 'M12'), ordered = T)
 
+virstability_M1 <- read.table('03a.RESULTS/N_retained_vOTUs_from_M1_infants.txt', sep='\t', header=T)
+virstability_M1_dots <- reshape2::melt(virstability_M1)
+virstability_M1_dots <- virstability_M1_dots[grep('Not_retained', virstability_M1_dots$variable, invert=T),]
+virstability_M1_dots$Timepoint <- gsub('.*_','',virstability_M1_dots$variable)
+virstability_M1_dots$Condition <- 'Retained'
+virstability_M1_dots[grep('Richness',virstability_M1_dots$variable),]$Condition <- 'Richness'
+
 ##### for Figure 2D #######
 virstability_M1_abundance_stat <- read.table('02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig2B_RA_retained_vOTUs_from_M1_infants_stat.txt', sep='\t', header=T)
 virstability_M1_abundance_stat$Timepoint <- factor(virstability_M1_abundance_stat$Timepoint, levels = c('M1', 'M2', 'M3', 'M6', 'M12'), ordered = T)
+virstability_M1_abundance <- read.table('03a.RESULTS/Abundance_retained_vOTUs_from_M1_infants.txt', sep='\t', header=T)
+virstability_M1_abundance_dots <- reshape2::melt(virstability_M1_abundance)
+virstability_M1_abundance_dots <- virstability_M1_abundance_dots[grep('Not_retained', virstability_M1_abundance_dots$variable, invert = T),]
+virstability_M1_abundance_dots$Timepoint <- gsub('.*_','',virstability_M1_abundance_dots$variable)
+virstability_M1_abundance_dots$Condition <- 'Retained'
+virstability_M1_abundance_dots[grep('Total_space',virstability_M1_abundance_dots$variable),]$Condition <- 'Total_space'
 
 ##### for Figure 2E #######
 virstability_P7_stat <- read.table("02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig2C_N_retained_vOTUs_from_P7_mothers_stat.txt", sep='\t', header=T)
 virstability_P7_stat$Timepoint <- factor(virstability_P7_stat$Timepoint, levels=c("P7", "B",
                                                                                   "M1", "M2", "M3"), ordered = T)
+virstability_P7 <- read.table('03a.RESULTS/N_retained_vOTUs_from_P7_mothers.txt', sep='\t', header=T)
+virstability_P7_dots <- reshape2::melt(virstability_P7)
+virstability_P7_dots <- virstability_P7_dots[grep('Not_retained', virstability_P7_dots$variable, invert=T),]
+virstability_P7_dots$Timepoint <- gsub('.*_','',virstability_P7_dots$variable)
+virstability_P7_dots$Condition <- 'Retained'
+virstability_P7_dots[grep('Richness',virstability_P7_dots$variable),]$Condition <- 'Richness'
+
 ##### for Figure 2F #######
 virstability_P7_abundance_stat <- read.table('02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig2D_RA_retained_vOTUs_from_P7_mothers_stat.txt', sep='\t', header=T)
 virstability_P7_abundance_stat$Timepoint <- factor(virstability_P7_stat$Timepoint, levels=c("P7", "B",
                                                                                             "M1", "M2", "M3"), ordered = T)
+virstability_P7_abundance <- read.table('03a.RESULTS/Abundance_retained_vOTUs_from_P7_mothers.txt', sep='\t', header=T)
+virstability_P7_abundance_dots <- reshape2::melt(virstability_P7_abundance)
+virstability_P7_abundance_dots <- virstability_P7_abundance_dots[grep('Not_retained', virstability_P7_abundance_dots$variable, invert = T),]
+virstability_P7_abundance_dots$Timepoint <- gsub('.*_','',virstability_P7_abundance_dots$variable)
+virstability_P7_abundance_dots$Condition <- 'Retained'
+virstability_P7_abundance_dots[grep('Total_space',virstability_P7_abundance_dots$variable),]$Condition <- 'Total_space'
 
 ##### for Figure 2G #######
 Veronese <- met.brewer('Veronese')
@@ -158,7 +184,7 @@ colnames(simulate_missing_hostgen) <- colnames(BacGen_average)
 BacGen_average <- rbind(BacGen_average, simulate_missing_hostgen)
 
 ##### for Figure 3A #######
-significance_annotation_F3A <- data.frame(label = c("p-value=2.9e-04\nbeta=-8.7e-02", "p-value=9.2e-02\nbeta=-5.3e-01"),
+significance_annotation_F3A <- data.frame(label = c("p-value=2.9e-04 beta=-8.7e-02", "p-value=9.2e-02 beta=-5.3e-01"),
                                            Type   = c("Infant", "Mother") )
 
 
@@ -288,23 +314,22 @@ L34922_LS1_VLP_reads$variable <- factor(L34922_LS1_VLP_reads$variable, levels=un
 
 ##### Figure 1B #######
 pv <- ggplot(data = vOTUs_data.scores, aes(x = NMDS1, y = NMDS2, color=Timepoint)) + 
-  
   stat_ellipse(geom = "polygon", alpha = 0.2, aes(group = Timepoint, fill=Timepoint), linetype = 2) +
-  geom_point(size = 2, alpha=0.8) + 
-  geom_point(data=vOTUs_centroids, aes(fill=Timepoint),shape=23, size=4, color='black') + 
+  geom_point(size = 1.5, alpha=0.8) + 
+  geom_point(data=vOTUs_centroids, aes(fill=Timepoint),shape=23, size=2, color='black') + 
   geom_segment(data = vOTUs_spp.scrs,
                aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
                arrow = arrow(length = unit(0.25, "cm")), colour = "#444444") +
   geom_label_repel(data = vOTUs_spp.scrs, aes(x = NMDS1, y = NMDS2, label = Species), color='black', size = 2, alpha=0.7) +
-  #scale_fill_manual(values = c("#3E0751", "#423A7F", "#3F678B", "#468E8B","red", "#9FD55C", "#F9E855") ) +
+  #scale_fill_manual(values = c("#3E0751", "#423A7F", "#3F678B", "#468E8B","#5FB57E", "#9FD55C", "#F9E855") ) +
   xlim(-0.8, 0.8)+
   theme_bw()+
-  theme(axis.text=element_text(size=10),
-        axis.title = element_text(size = 10), 
+  theme(axis.text=element_text(size=5),
+        axis.title = element_text(size = 7), 
         panel.background = element_blank(), 
         panel.border = element_rect(fill = NA, colour = "grey30"), 
-        legend.title = element_text(size = 8), 
-        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 7), 
+        legend.text = element_text(size = 5),
         legend.position = "bottom") +
   guides(color=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
          fill=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
@@ -315,10 +340,10 @@ xAxisBoxPlot_v <- ggplot(data = vOTUs_data.scores[vOTUs_data.scores$Timepoint!="
   ylim(-0.8,0.8)+
   labs(tag = 'b') +
   coord_flip() +
-  ggtitle("Composition shift of infant virome over time") +
-  scale_fill_manual(values = c("#3E0751", "#423A7F", "#3F678B", "#468E8B","#9FD55C", "#F9E855") ) +
+  ggtitle("Shift in infant virome composition over time") +
+  #scale_fill_manual(values = c("#3E0751", "#423A7F", "#3F678B", "#468E8B","#9FD55C", "#F9E855") ) +
   theme_void() +
-  theme(plot.title = element_text(hjust=0.5), plot.tag = element_text(face="bold", vjust=-5))
+  theme(plot.title = element_text(hjust=0.0, size=7), plot.tag = element_text(face="bold", vjust=-7, size=7))
 
 Fig1B <- xAxisBoxPlot_v / pv + 
   plot_layout(heights = c(2,8)) & guides(color=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
@@ -329,31 +354,31 @@ Fig1B <- xAxisBoxPlot_v / pv +
 ##### Figure 1C #######
 pb <- ggplot(data = BacSp_data.scores, aes(x = NMDS1, y = NMDS2, color=Timepoint)) + 
   stat_ellipse(geom = "polygon", alpha = 0.2, aes(group = Timepoint, fill=Timepoint), linetype = 2) +
-  geom_point(size = 2, alpha=0.8) + 
-  geom_point(data=BacSp_centroids, aes(fill=Timepoint),shape=23, size=4, color='black', ) + 
+  geom_point(size = 1.5, alpha=0.8) + 
+  geom_point(data=BacSp_centroids, aes(fill=Timepoint),shape=23, size=2, color='black', ) + 
   geom_segment(data = BacSp_spp.scrs,
                aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
                arrow = arrow(length = unit(0.25, "cm")), colour = "#444444") +
   geom_label_repel(data = BacSp_spp.scrs, aes(x = NMDS1, y = NMDS2, label = Species), color='black', size = 2, alpha=0.7) +
   xlim(-1.8, 2.55)+
-  scale_fill_manual(values = c("#3E0751", "#423A7F", "#3F678B", "#468E8B", "#5FB57E","#9FD55C", "#F9E855")) +
+  #scale_fill_manual(values = c("#3E0751", "#423A7F", "#3F678B", "#468E8B", "#5FB57E","#9FD55C", "#F9E855")) +
   theme_bw()+
-  theme(axis.text=element_text(size=10),
-        axis.title = element_text(size = 10), 
+  theme(axis.text=element_text(size=5),
+        axis.title = element_text(size = 7), 
         panel.background = element_blank(), 
         panel.border = element_rect(fill = NA, colour = "grey30"), 
-        legend.title = element_text(size = 8), 
-        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 7), 
+        legend.text = element_text(size = 5),
         legend.position = "bottom") 
 
 xAxisBoxPlot_b <- ggplot(data = BacSp_data.scores, aes(x = Timepoint, y = NMDS1)) +
   geom_boxplot(aes(fill=Timepoint), alpha=0.7, show.legend = FALSE) + 
   ylim(-1.8, 2.55)+
-  ggtitle("Composition shift of infant bacteriome over time") +
+  ggtitle("Shift in infant bacteriome composition over time") +
   labs(tag = 'c') +
   coord_flip() +
   theme_void() +
-  theme(plot.title = element_text(hjust=0.5), plot.tag = element_text(face="bold", vjust=-5))
+  theme(plot.title = element_text(hjust=0.0, size=7), plot.tag = element_text(face="bold", vjust=-7, size=7))
 
 Fig1C <- xAxisBoxPlot_b / pb + 
   plot_layout(heights = c(2,8)) + guides(color=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
@@ -362,22 +387,23 @@ Fig1C <- xAxisBoxPlot_b / pb +
 
 ##### Figure 1D #######
 pvm <- ggplot(data = vOTUs_data.scores_mothers, aes(x = NMDS1, y = NMDS2, color=Timepoint)) + 
-  geom_point(size = 2, alpha=0.8) + 
   stat_ellipse(geom = "polygon", alpha = 0.2, aes(group = Timepoint, fill=Timepoint), linetype = 2) +
-  geom_point(data=vOTUs_centroids_mothers, aes(fill=Timepoint),shape=23, size=4, color='black') + 
+  geom_point(size = 1.5, alpha=0.8) + 
+  geom_point(data=vOTUs_centroids_mothers, aes(fill=Timepoint),shape=23, size=2, color='black') + 
   geom_segment(data = vOTUs_spp.scrs_mothers,
                aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
                arrow = arrow(length = unit(0.25, "cm")), colour = "black") +
   geom_label_repel(data = vOTUs_spp.scrs_mothers, aes(x = NMDS1, y = NMDS2, label = Species), color='black', size = 2, alpha=0.7) +
   scale_fill_manual(values=Peru1) +
   scale_color_manual(values=Peru1) +
+  xlim(-1,1.05)+
   theme_bw()+
-  theme(axis.text=element_text(size=10),
-        axis.title = element_text(size = 10, face = "bold", colour = "grey30"), 
+  theme(axis.text=element_text(size=5),
+        axis.title = element_text(size = 7), 
         panel.background = element_blank(), 
         panel.border = element_rect(fill = NA, colour = "grey30"), 
-        legend.title = element_text(size = 8, face = "bold", colour = "grey30"), 
-        legend.text = element_text(size = 8, colour = "grey30"),
+        legend.title = element_text(size = 7), 
+        legend.text = element_text(size = 5),
         legend.position = "bottom") +
   guides(color=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
          fill=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
@@ -386,11 +412,12 @@ pvm <- ggplot(data = vOTUs_data.scores_mothers, aes(x = NMDS1, y = NMDS2, color=
 xAxisBoxPlot_vm <- ggplot(data = vOTUs_data.scores_mothers[vOTUs_data.scores_mothers$Timepoint!="P3",], aes(x = Timepoint, y = NMDS1)) +
   geom_boxplot(aes(fill=Timepoint), alpha=0.7, show.legend = FALSE) + 
   labs(tag = 'd') +
+  ylim(-1,1.05)+
   coord_flip() +
-  ggtitle("Composition shift of maternal virome over time") +
+  ggtitle("Shift in mother virome composition over time") +
   scale_fill_manual(values=Peru1[2:6]) +
   theme_void() +
-  theme(plot.title = element_text(face="bold", hjust=0.5), plot.tag = element_text(face="bold"))
+  theme(plot.title = element_text(hjust=0.0, size=7), plot.tag = element_text(face="bold", vjust=-7, size=7))
 
 Fig1D <- xAxisBoxPlot_vm / pvm + 
   plot_layout(heights = c(2,8)) & guides(color=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
@@ -399,32 +426,34 @@ Fig1D <- xAxisBoxPlot_vm / pvm +
 
 ##### Figure 1E #######
 pbm <- ggplot(data = BacSp_data.scores_mothers, aes(x = NMDS1, y = NMDS2, color=Timepoint)) + 
-  geom_point(size = 2, alpha=0.8) + 
   stat_ellipse(geom = "polygon", alpha = 0.2, aes(group = Timepoint, fill=Timepoint), linetype = 2) +
-  geom_point(data=BacSp_centroids_mothers, aes(fill=Timepoint),shape=23, size=4, color='black', ) + 
+  geom_point(size = 1.5, alpha=0.8) + 
+  geom_point(data=BacSp_centroids_mothers, aes(fill=Timepoint),shape=23, size=2, color='black', ) + 
   geom_segment(data = BacSp_spp.scrs_mothers,
                aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
                arrow = arrow(length = unit(0.25, "cm")), colour = "#444444") +
   geom_label_repel(data = BacSp_spp.scrs_mothers, aes(x = NMDS1, y = NMDS2, label = Species), color='black', size = 2, alpha=0.7) +
   scale_fill_manual(values=Peru1) +
   scale_color_manual(values=Peru1) +
+  xlim(-1,1)+
   theme_bw()+
-  theme(axis.text=element_text(size=10),
-        axis.title = element_text(size = 10, face = "bold", colour = "grey30"), 
+  theme(axis.text=element_text(size=5),
+        axis.title = element_text(size = 7), 
         panel.background = element_blank(), 
         panel.border = element_rect(fill = NA, colour = "grey30"), 
-        legend.title = element_text(size = 8, face = "bold", colour = "grey30"), 
-        legend.text = element_text(size = 8, colour = "grey30"),
+        legend.title = element_text(size = 7), 
+        legend.text = element_text(size = 5),
         legend.position = "bottom") 
 
 xAxisBoxPlot_bm <- ggplot(data = BacSp_data.scores_mothers, aes(x = Timepoint, y = NMDS1)) +
   geom_boxplot(aes(fill=Timepoint), alpha=0.7, show.legend = FALSE) + 
-  ggtitle("Composition shift of mother bacteriome over time") +
+  ylim(-1,1)+
+  ggtitle("Shift in mother bacteriome composition over time") +
   scale_fill_manual(values=Peru1) +
   labs(tag = 'e') +
   coord_flip() +
   theme_void() +
-  theme(plot.title = element_text(face="bold", hjust=0.5), plot.tag = element_text(face="bold"))
+  theme(plot.title = element_text(hjust=0.0, size=7), plot.tag = element_text(face="bold", vjust=-7, size=7))
 
 Fig1E <- xAxisBoxPlot_bm / pbm + 
   plot_layout(heights = c(2,8)) + guides(color=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
@@ -433,210 +462,229 @@ Fig1E <- xAxisBoxPlot_bm / pbm +
 
 Fig1BC <- (Fig1B | Fig1C) + plot_layout(ncol=2, guides = "collect") & 
   theme(legend.position = "bottom", 
-        legend.box.margin = margin(0,0,0,0))
+        legend.box.margin = margin(-15,0,0,0))
 
 Fig1DE <- (Fig1D | Fig1E) + plot_layout(ncol=2, guides = "collect") & 
   theme(legend.position = "bottom", 
-        legend.box.margin = margin(0,0,0,0))
+        legend.box.margin = margin(-15,0,0,0))
 
 Fig1BCDE <- plot_spacer() / (Fig1BC) / (Fig1DE) + plot_layout(ncol=1, heights = c(4,3,3)) & theme(legend.position = "bottom", 
-                                                                                                         #axis.title = element_text(size=6),
+                                                                                                         #axis.title = element_text(size=7),
                                                                                                          #axis.text = element_text(size=5), 
-                                                                                                         plot.title = element_text(size=10),
-                                                                                                         legend.title = element_text(size=10),
-                                                                                                         legend.text = element_text(size=10))
+                                                                                                         plot.title = element_text(size=7),
+                                                                                                         legend.title = element_text(size=7),
+                                                                                                         legend.text = element_text(size=5), 
+                                                                                                         plot.tag = element_text(size=7))
 
-pdf('Figures/Figure1/Fig1BCDE_2007.pdf', width=21/2.54, height=29.7/2.54)
+pdf('Figures/Figure1/Fig1BCDE_1412.pdf', width=18/2.54, height=21/2.54)
 Fig1BCDE
 dev.off()
 
 
 ##### Figure 2A #######
 Fig2A <- ggplot(VLP_metadata, aes(Timepoint, viral_alpha_diversity, fill=Type)) + 
-  labs (y="vOTUs Shannon Diversity Index", x="Timepoint", tag='a',colour = "Type") + 
-  ylim(0,11) + 
+  labs (y="Shannon Diversity Index", x="Timepoint", tag='a',colour = "Type") + 
+  ylim(0,10) + 
   geom_violin(aes(color=Type),alpha=0.1, show.legend = F) + 
-  geom_sina(aes(colour=Type), size=0.6, show.legend = F) +
+  geom_sina(aes(colour=Type), size=0.3, show.legend = F) +
   ggnewscale::new_scale_color() + 
-  geom_boxplot(aes(color=Type),width = 0.4, outlier.shape = NA, alpha=0.3, show.legend = F) + 
+  geom_boxplot(aes(color=Type),width = 0.3, outlier.shape = NA, alpha=0.3, show.legend = F, lwd=0.3) + 
   scale_color_manual(values=c("#B31312", "#090580")) + 
   ggtitle("Alpha diversity of vOTUs over time") +
   theme_bw()+
   theme(legend.position="none") + 
   facet_grid(~Type, scales="free", space = "free") +
-  geom_text(data=significance_annotation_F2A, x=3, y=10.5, aes(label=label), size=3) +
-  theme(axis.text=element_text(size=10), 
-        axis.title=element_text(size=10,face="bold"),
-        strip.text.x = element_text(size = 10, face="bold"),
+  geom_text(data=significance_annotation_F2A, x=3, y=10, aes(label=label), size=1.75) +
+  theme(axis.text=element_text(size=5), 
+        axis.title=element_text(size=7),
+        strip.text.x = element_text(size = 6),
         strip.background = element_rect(color="black", fill=NA),
-        legend.text = element_text(size=8),
-        legend.title = element_text(size=8, face="bold"),
-        plot.title = element_text(face="bold", hjust=0.5), 
-        plot.tag = element_text(face="bold"))
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=7),
+        plot.title = element_text(hjust=0.5, size=7), 
+        plot.tag = element_text(face="bold", size=7, vjust=-4))
 
 ##### Figure 2B #######
 Fig2B <- ggplot(MGS_metadata, aes(Timepoint, bacterial_alpha_diversity, fill=Type)) + 
-  labs (y="Species Shannon Diversity Index", x="Timepoint", tag="b") + 
+  labs (y="Shannon Diversity Index", x="Timepoint", tag="b") + 
   ylim(0,5) + 
   geom_violin(aes(color=Type),alpha=0.1, show.legend = F) + 
-  geom_sina(aes(colour=Type), size=0.6, show.legend = F) +
+  geom_sina(aes(colour=Type), size=0.3, show.legend = F) +
   ggnewscale::new_scale_color() + 
-  geom_boxplot(aes(color=Type),width = 0.3, outlier.shape = NA, alpha=0.3, show.legend = F) + 
+  geom_boxplot(aes(color=Type),width = 0.3, outlier.shape = NA, alpha=0.3, show.legend = F, lwd=0.3) + 
   scale_color_manual(values=c("#B31312", "#090580")) + 
   ggtitle("Alpha diversity of bacterial species over time") +
   theme_bw()+
   theme(legend.position="none") + 
   facet_grid(~Type, scales="free", space = "free") +
-  geom_text(data=significance_annotation_F2B, x=3.5, y=4.5, aes(label=label), size=3) +
-  theme(axis.text=element_text(size=10), 
-        axis.title=element_text(size=10,face="bold"),
-        strip.text.x = element_text(size = 10, face="bold"),
+  geom_text(data=significance_annotation_F2B, x=3.5, y=4.25, aes(label=label), size=1.75) +
+  theme(axis.text=element_text(size=5), 
+        axis.title=element_text(size=7),
+        strip.text.x = element_text(size = 6),
         strip.background = element_rect(color="black", fill=NA),
-        legend.text = element_text(size=8),
-        legend.title = element_text(size=8, face="bold"),
-        plot.title = element_text(face="bold", hjust=0.5),
-        plot.tag = element_text(face="bold"))
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=7),
+        plot.title = element_text(hjust=0.5, size=7),
+        plot.tag = element_text(face="bold", size=7, vjust=-4))
 
 ##### Figure 2C #######
-Fig2C <- ggplot(virstability_M1_stat[virstability_M1_stat$Condition!='Not_retained',], aes(Timepoint, mean_bootstrap, fill=Condition, alpha=Condition)) + 
+Fig2C <- ggplot(data=virstability_M1_stat[virstability_M1_stat$Condition!='Not_retained',], aes(Timepoint, mean_bootstrap, fill=Condition, alpha=Condition)) + 
   geom_bar(color='grey', stat = "identity", position = "identity") +
+  geom_sina(data=virstability_M1_dots, aes(Timepoint, value, color=Condition, group=Timepoint), size=0.3) +
   geom_errorbar(data=virstability_M1_stat[virstability_M1_stat$Condition!='Not_retained',], 
                 aes(x=Timepoint, 
                     ymin=q1_bootstrap, 
                     ymax=q2_bootstrap, 
                     colour=Condition), 
-                width=0.3, alpha=0.9, size=1)  +
-  labs(x="Timepoints", y="N detected vOTUs", fill='Present vOTUs', tag="c") + 
-  ggtitle("Infant metavirome") +
+                width=0.3, alpha=0.9, size=0.5)  + 
+  labs(x="Timepoints", y="N detected vOTUs", fill='vOTUs', color="vOTUs", tag="c") + 
+  ggtitle("Infant virome") +
   theme_bw() + 
-  theme(axis.title=element_text(size=9,face="bold"),
+  theme(axis.title=element_text(size=7),
+        axis.text=element_text(size=5),
         legend.position = "bottom",
-        legend.title = element_text(size=8,face="bold"),
-        legend.text = element_text(size=7), 
-        plot.tag = element_text(face="bold"),
-        plot.title = element_text(face="bold", hjust=0.5)) + 
-  scale_fill_manual(values = c(Demuth[5:6], "#FFFFFF"), labels=c('Retained from M1', 'Not present at M1')) + 
-  scale_color_manual(values = c(Demuth[c(3,8)])) + 
-  scale_alpha_manual(values=c(0.9,0.3), labels=c('Retained from M1', 'Not present at M1')) +
-  guides(color="none", 
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=5), 
+        plot.tag = element_text(face="bold", size=7, vjust=-4),
+        plot.title = element_text(hjust=0.5, size=7),
+        legend.key.size=unit(0.7, "line")) + 
+  scale_fill_manual(values = c(Demuth[5:6], "#FFFFFF"), labels=c('Retained from M1', 'All')) + 
+  scale_colour_manual(values = c(Demuth[c(3,8)]), labels=c('Retained from M1', 'All')) + 
+  scale_alpha_manual(values=c(0.9,0.3), labels=c('Retained from M1', 'All')) +
+  guides(#color=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5),
          fill=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
          alpha="none")
 
 ##### Figure 2D #######
 Fig2D <- ggplot(virstability_M1_abundance_stat[virstability_M1_abundance_stat$Condition!='Not_retained',], aes(Timepoint, mean_bootstrap, fill=Condition, alpha=Condition)) + 
   geom_bar(color='grey', stat = "identity", position="identity") +
+  geom_sina(data=virstability_M1_abundance_dots, aes(Timepoint, value, color=Condition, group=Timepoint), size=0.3) +
   geom_errorbar(data=virstability_M1_abundance_stat[virstability_M1_abundance_stat$Condition=='Retained',], 
                 aes(x=Timepoint, 
                     ymin=q1_bootstrap, 
                     ymax=q2_bootstrap, 
                     colour=Condition), 
-                width=0.3, alpha=0.9, size=1)  +
-  labs(x="Timepoints", y="Retained vOTUs relative abundance",fill='Present vOTUs', tag = "d") + 
-  ggtitle("Infant metavirome") +
+                width=0.3, alpha=0.9, size=0.5)  +
+  labs(x="Timepoints", y="Relative abundance",fill='vOTUs', color='vOTUs', tag = "d") + 
+  ggtitle("Infant virome") +
   theme_bw() + 
-  theme(axis.title =element_text(size=9,face="bold"),
+  theme(axis.title=element_text(size=7),
+        axis.text=element_text(size=5),
         legend.position = "bottom",
-        legend.title = element_text(size=8,face="bold"),
-        legend.text = element_text(size=7),
-        plot.tag = element_text(face="bold"),
-        plot.title = element_text(face="bold", hjust=0.5)) + 
-  scale_fill_manual(values = c(Demuth[5:6], "#FFFFFF"), labels=c('Retained from M1', 'Not present at M1')) + 
-  scale_color_manual(values = c(Demuth[c(3,8)])) + 
-  scale_alpha_manual(values=c(0.9,0.3), labels=c('Retained from M1', 'Not present at M1')) +
-  guides(color="none",
-         fill=guide_legend(nrow=1,byrow=TRUE, title.position = 'top',title.hjust = 0.5), 
-         alpha="none")
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=5), 
+        plot.tag = element_text(face="bold", size=7, vjust=-4),
+        plot.title = element_text(hjust=0.5, size=7),
+        legend.key.size=unit(0.7, "line")) + 
+  scale_fill_manual(values = c(Demuth[5:6], "#FFFFFF"), labels=c('Retained from M1', 'All')) + 
+  scale_colour_manual(values = c(Demuth[c(3,8)]), labels=c('Retained from M1', 'All')) + 
+  scale_alpha_manual(values=c(0.9,0.3), labels=c('Retained from M1', 'All')) +
+  guides(#color="none", 
+    fill=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
+    alpha="none")
 
 ##### Figure 2E #######
 Fig2E <- ggplot(virstability_P7_stat[virstability_P7_stat$Condition!='Not_retained',], aes(Timepoint, mean_bootstrap, fill=Condition, alpha=Condition)) + 
   geom_bar(color='grey', stat = "identity", position = "identity") +
+  geom_sina(data=virstability_P7_dots, aes(Timepoint, value, color=Condition, group=Timepoint), size=0.3) +
   geom_errorbar(data=virstability_P7_stat[virstability_P7_stat$Condition!='Not_retained',], 
                 aes(x=Timepoint, 
                     ymin=q1_bootstrap, 
                     ymax=q2_bootstrap,
                     colour=Condition), 
-                width=0.3, alpha=0.9, size=1)  +
-  labs(x="Timepoints", y="N detected vOTUs",fill='Present vOTUs', color='', tag="e") + 
-  ggtitle("Mother metavirome") +
+                width=0.3, alpha=0.9, size=0.5)  +
+  labs(x="Timepoints", y="N detected vOTUs",fill='vOTUs', color='vOTUs', tag="e") + 
+  ggtitle("Mother virome") +
   theme_bw() + 
-  theme(axis.title =element_text(size=9,face="bold"),
+  theme(axis.title=element_text(size=7),
+        axis.text=element_text(size=5),
         legend.position = "bottom",
-        legend.title = element_text(size=8,face="bold"),
-        legend.text = element_text(size=7),
-        plot.tag = element_text(face="bold"),
-        plot.title = element_text(face="bold", hjust=0.5)) + 
-  scale_fill_manual(values = c(Demuth[5:6], "#FFFFFF"), labels=c('Retained from P7', 'Not present at P7')) + 
-  scale_color_manual(values = c(Demuth[c(3,8)])) + 
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=5), 
+        plot.tag = element_text(face="bold", size=7, vjust=-4),
+        plot.title = element_text(hjust=0.5, size=7),
+        legend.key.size=unit(0.7, "line")) + 
+  scale_fill_manual(values = c(Demuth[5:6], "#FFFFFF"), labels=c('Retained from P7', 'All')) + 
+  scale_color_manual(values = c(Demuth[c(3,8)]), labels=c('Retained from P7', 'All')) + 
   scale_alpha_manual(values=c(0.9,0.3)) +
-  guides(color="none", 
+  guides(#color="none", 
          fill=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
          alpha="none")
 
 ##### Figure 2F #######
 Fig2F <- ggplot(virstability_P7_abundance_stat[virstability_P7_abundance_stat$Condition!='Not_retained',], aes(Timepoint, mean_bootstrap, fill=Condition, alpha=Condition)) + 
   geom_bar(color='grey', stat = "identity", position = "identity") +
+  geom_sina(data=virstability_P7_abundance_dots, aes(Timepoint, value, color=Condition, group=Timepoint), size=0.3) +
   geom_errorbar(data=virstability_P7_abundance_stat[virstability_P7_abundance_stat$Condition=='Retained',], 
                 aes(x=Timepoint, 
                     ymin=q1_bootstrap, 
                     ymax=q2_bootstrap,
                     colour=Condition), 
-                width=0.3, alpha=0.9, size=1)  +
-  labs(x="Timepoints",y="Retained vOTUs relative abundance",fill='Present vOTUs', color='', tag = "f") + 
-  ggtitle("Mother metavirome") +
+                width=0.3, alpha=0.9, size=0.5)  +
+  labs(x="Timepoints",y="Relative abundance",fill='vOTUs', color='vOTUs', tag = "f") + 
+  ggtitle("Mother virome") +
   theme_bw() + 
-  theme(axis.title =element_text(size=9,face="bold"),
+  theme(axis.title=element_text(size=7),
+        axis.text=element_text(size=5),
         legend.position = "bottom",
-        legend.title = element_text(size=8,face="bold"),
-        legend.text = element_text(size=7),
-        plot.tag = element_text(face="bold"),
-        plot.title = element_text(face="bold", hjust=0.5)) + 
-  scale_fill_manual(values = c(Demuth[5:6], "#FFFFFF"), labels=c('Retained from P7', 'Not present at P7')) + 
-  scale_color_manual(values = c(Demuth[c(3,8)])) + 
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=5), 
+        plot.tag = element_text(face="bold", size=7, vjust=-4),
+        plot.title = element_text(hjust=0.5, size=7),
+        legend.key.size=unit(0.7, "line")) + 
+  scale_fill_manual(values = c(Demuth[5:6], "#FFFFFF"), labels=c('Retained from P7', 'All')) + 
+  scale_color_manual(values = c(Demuth[c(3,8)]), labels=c('Retained from P7', 'All')) + 
   scale_alpha_manual(values=c(0.9,0.3), labels=c('Retained', 'Total space')) +
-  guides(color="none", 
+  guides(#color="none", 
          fill=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
          alpha="none")
 
 ##### Figure 2G #######
 Fig2G <- ggplot(plot_vir_frac_infants_per_sample_N, aes(Sample, value, fill=variable)) + 
   geom_bar(position = "fill", stat = "identity", width=1) + 
-  labs(x="Infant samples",y="% of vOTUs classified into fractions",fill='Fraction', tag="g") +
-  ggtitle("Infant metavirome") +
+  labs(x="Infant samples",y="% of sample composition", fill='Fraction', tag="g") +
+  ggtitle("Infant virome") +
   facet_grid(~Infant, space = "free_x", scales = "free_x") +
   theme_bw() + 
   scale_fill_manual(values=Veronese[5:4], labels=c('PPV', 'TDV')) +
-  theme(axis.text.y=element_text(size=9), 
+  scale_y_continuous(labels = scales::percent_format()) +
+  theme(axis.text.y=element_text(size=5), 
         axis.text.x=element_blank(),
         axis.ticks.x = element_blank(),
-        axis.title =element_text(size=9,face="bold"),
-        strip.text.x = element_text(size = 10, face="bold"),
+        axis.title =element_text(size=7),
+        strip.text.x = element_text(size = 6),
         strip.background = element_rect(color="black", fill=NA),
         legend.position = "bottom", 
-        plot.tag = element_text(face="bold"),
+        plot.tag = element_text(face="bold", size=7, vjust=-4),
         panel.spacing = unit(0.1, "lines"),
-        legend.title = element_text(face="bold"),
-        plot.title = element_text(face="bold", hjust=0.5)) + 
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=5),
+        plot.title = element_text(hjust=0.5, size=7),
+        legend.key.size=unit(0.7, "line")) + 
   guides(fill=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5))
 
 ##### Figure 2H #######
 Fig2H <- ggplot(p_vir_frac_infants_per_sample_ab, aes(Sample, value, fill=variable)) + 
   geom_bar(position = "fill", stat = "identity", width=1) + 
-  labs(x="Infant samples",y="Fractions relative abundance",fill='Fraction', tag="h") +
-  ggtitle("Infant metavirome") +
+  labs(x="Infant samples",y="% relative abundance",fill='Fraction', tag="h") +
+  ggtitle("Infant virome") +
   facet_grid(~Infant, space = "free_x", scales = "free_x") +
   theme_bw() + 
   scale_fill_manual(values=Veronese[5:4], labels=c('PPV', 'TDV')) +
-  theme(axis.text.y=element_text(size=9), 
+  scale_y_continuous(labels = scales::percent_format()) +
+  theme(axis.text.y=element_text(size=5), 
         axis.text.x=element_blank(),
         axis.ticks.x = element_blank(),
-        axis.title =element_text(size=9,face="bold"),
-        strip.text.x = element_text(size = 10, face="bold"),
+        axis.title =element_text(size=7),
+        strip.text.x = element_text(size = 6),
         strip.background = element_rect(color="black", fill=NA),
-        plot.tag = element_text(face="bold"),
         legend.position = "bottom", 
+        plot.tag = element_text(face="bold", size=7, vjust=-4),
         panel.spacing = unit(0.1, "lines"),
-        legend.title = element_text(face="bold"),
-        plot.title = element_text(face="bold", hjust=0.5)) +
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=5),
+        plot.title = element_text(hjust=0.5, size=7),
+        legend.key.size=unit(0.7, "line")) +
   guides(fill=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5))
 
 ##### Figure 2I #######
@@ -648,16 +696,17 @@ Fig2I <- ggplot(HostGen_average, aes(variable, value, fill=taxa, alpha=Sequencin
   ggtitle("vOTUs aggregated at host genus level") +
   theme_bw() + 
   scale_fill_manual(values=Gen_palette[Gen_palette$Genus %in% unique(HostGen_average$taxa), ]$Color) +
-  scale_alpha_manual(values = c(1,0.6)) +
-  theme(axis.text=element_text(size=10), 
-        axis.title=element_text(size=10,face="bold"),
-        strip.text.x = element_text(size = 10, face="bold"),
+  scale_alpha_manual(values = c(1,0.6), labels=c('VLP metavirome', 'MGS metavirome')) +
+  theme(axis.text=element_text(size=5), 
+        axis.title=element_text(size=7),
+        strip.text.x = element_text(size = 6),
         strip.background = element_rect(color="black", fill=NA),
-        legend.text = element_text(size=8),
-        legend.title = element_text(size=8, face="bold"),
-        plot.title = element_text(face="bold", hjust=0.5),
-        plot.tag = element_text(face="bold")) + 
-  guides(fill=guide_legend(nrow=4, byrow=F, title.position = 'top', title.hjust = 0.5), 
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=7),
+        plot.title = element_text(hjust=0.5, size=7),
+        plot.tag = element_text(face="bold", size=7, vjust=-4),
+        legend.key.size=unit(0.7, "line")) + 
+  guides(fill=guide_legend(nrow=4, byrow=F, title.position = 'top', title.hjust = 0.5,label.theme = element_text(face = "italic", size=5)), 
          alpha=guide_legend(nrow=2, byrow=TRUE, title.position = 'top', title.hjust = 0.5))
 
 ##### Figure 2J #######
@@ -670,19 +719,20 @@ Fig2J <- ggplot(BacGen_average, aes(variable, value, fill=taxa)) +
   ggtitle("Bacterial genera") +
   theme_bw() + 
   scale_fill_manual(values=Gen_palette[Gen_palette$Genus %in% unique(BacGen_average$taxa), ]$Color) +
-  scale_alpha_manual(values = c(0.8, 1)) +
-  theme(axis.text=element_text(size=10), 
-        axis.title=element_text(size=10,face="bold"),
-        strip.text.x = element_text(size = 10, face="bold"),
+  scale_alpha_manual(values = c(0.8, 1), labels=c('VLP metavirome', 'MGS metavirome')) +
+  theme(axis.text=element_text(size=5), 
+        axis.title=element_text(size=7),
+        strip.text.x = element_text(size = 6),
         strip.background = element_rect(color="black", fill=NA),
-        legend.text = element_text(size=8),
-        legend.title = element_text(size=8, face="bold"),
-        plot.title = element_text(face="bold", hjust=0.5),
-        plot.tag = element_text(face="bold")) + 
-  guides(fill=guide_legend(nrow=4, byrow=F, title.position = 'top', title.hjust = 0.5), 
-         alpha=guide_legend(nrow=2, byrow=TRUE, title.position = 'top', title.hjust = 0.5))
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=7),
+        plot.title = element_text(hjust=0.5, size=7),
+        plot.tag = element_text(face="bold", size=7, vjust=-4),
+        legend.key.size=unit(0.7, "line")) + 
+  guides(fill=guide_legend(nrow=4, byrow=F, title.position = 'top', title.hjust = 0.5,  label.theme = element_text(face = "italic", size=5)), 
+         alpha=guide_legend(nrow=2, byrow=TRUE, title.position = 'top', title.hjust = 0.5, label.theme = element_text(size=5)))
 
-Fig2AB <- (Fig2A | Fig2B ) + plot_layout(ncol=2,guides="keep") & theme(legend.position = "bottom")
+Fig2AB <- (Fig2A | Fig2B ) + plot_layout(ncol=2,guides="keep") & theme(legend.position = "left")
 
 Fig2CDEF <- (Fig2C | Fig2D | Fig2E | Fig2F) + plot_layout(ncol=4,guides="collect") & theme(legend.position = "bottom")
 
@@ -690,14 +740,14 @@ Fig2GH <- (Fig2G | Fig2H) +  plot_layout(ncol=2,guides="collect") & theme(legend
 
 Fig2IJ <- (Fig2I | Fig2J ) + plot_layout(ncol=2,guides="collect") & theme(legend.position = "bottom")
 
-Fig2 <- Fig2AB / Fig2CDEF / Fig2GH / Fig2IJ  + plot_layout(nrow=4, guides = "collect") & theme(plot.title = element_text(size=10),
-                                                                                                                    legend.title = element_text(size=10),
-                                                                                                                    legend.text = element_text(size=10),
+Fig2 <- Fig2AB / Fig2CDEF / Fig2GH / Fig2IJ  + plot_layout(nrow=4, guides = "collect") & theme(#plot.title = element_text(size=7),
+                                                                                                #                    legend.title = element_text(size=7),
+                                                                                                 #                   legend.text = element_text(size=5),
                                                                                                                     legend.margin=margin(0,0,0,0),
                                                                                                                     legend.box.margin=margin(-8,-10,-6,-10))
 
 
-pdf('Figures/Figure2/Fig2_2007.pdf', width=25/2.54, height=33/2.54)
+pdf('Figures/Figure2/Fig2_1512.pdf', width=18/2.54, height=21/2.54)
 Fig2
 dev.off()
 
@@ -705,35 +755,36 @@ dev.off()
 
 ##### Figure 3A #######
 Fig3A <- ggplot(VLP_metadata, aes(Timepoint, temperate_RA, fill=Type)) + 
-  ylim(0, 110) +
+  ylim(0, 103) +
   labs (y="Relative abundance of\nactive temperate phages", x="Timepoint", tag="a") + 
-  geom_boxplot(aes(color=Type),width=0.5,outlier.shape = NA, alpha=0.4, show.legend = F) + 
+  geom_boxplot(aes(color=Type),width=0.5,outlier.shape = NA, alpha=0.4, show.legend = F, lwd=0.3) + 
   geom_sina(aes(color=Type), size=0.6, show.legend = F) +
   facet_grid(~Type, scales = 'free_x') +
-  geom_text(data=significance_annotation_F3A, x=3, y=107, aes(label=label), size=3) +
+  geom_text(data=significance_annotation_F3A, x=3, y=102, aes(label=label), size=1.75) +
   theme_bw()+
   theme(legend.position="none") + 
-  theme(axis.text=element_text(size=10), 
-        axis.title=element_text(size=10,face="bold"),
-        strip.text.x = element_text(size = 10, face="bold"),
+  theme(axis.text=element_text(size=5), 
+        axis.title=element_text(size=7),
+        strip.text.x = element_text(size = 6),
         strip.background = element_rect(color="black", fill=NA),
-        legend.text = element_text(size=8),
-        legend.title = element_text(size=8, face="bold"),
-        plot.title = element_text(face="bold", hjust=0.5), 
-        plot.tag = element_text(face="bold"))
+        legend.text = element_text(size=7),
+        legend.title = element_text(size=5),
+        plot.title = element_text(hjust=0.5, size=7), 
+        plot.tag = element_text(face="bold", size=7))
 
 ##### Figure 3B #######
 Fig3B <- ggplot(VLP_metadata[!is.na(VLP_metadata$infant_ever_never_breastfed),], aes(Timepoint, viral_alpha_diversity, fill=infant_ever_never_breastfed)) + 
   labs (y="vOTUs Shannon Diversity Index", x="Timepoint", tag="b") + 
-  geom_boxplot(aes(color=infant_ever_never_breastfed), outlier.shape = NA, alpha=0.5) + 
+  geom_boxplot(aes(color=infant_ever_never_breastfed), outlier.shape = NA, alpha=0.5, lwd=0.3) + 
   geom_sina(aes(color=infant_ever_never_breastfed), size=0.6) +
-  annotate(geom="text", x=3, y=6, label="p-value=0.02\nbeta=0.9", size=3) +
+  annotate(geom="text", x=3, y=6, label="p-value=0.02, beta=0.9", size=1.75) +
   theme_bw()+
-  theme(axis.text=element_text(size=10), 
-        axis.title=element_text(size=10,face="bold"),
-        legend.text = element_text(size=8),
-        legend.title = element_text(size=8, face="bold"),
-        plot.tag = element_text(face="bold")) +
+  theme(axis.text=element_text(size=5), 
+        axis.title=element_text(size=7),
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=7),
+        plot.tag = element_text(face="bold", size=7),
+        legend.key.size=unit(0.7, "line")) +
   scale_fill_manual(name = "Feeding mode", 
                     labels=c('Breastfed', 'Exclusively\nformula fed'),
                     values=c("#EA5455", "#002B5B")) +
@@ -745,16 +796,17 @@ Fig3B <- ggplot(VLP_metadata[!is.na(VLP_metadata$infant_ever_never_breastfed),],
 
 ##### Figure 3C #######
 Fig3C <- ggplot(VLP_metadata[!is.na(VLP_metadata$infant_ever_never_breastfed),], aes(Timepoint, temperate_richness, fill=infant_ever_never_breastfed)) + 
-  labs (y="Richness of active\ntemperate phages (log10)", x="Timepoint", tag="c") + 
-  geom_boxplot(aes(color=infant_ever_never_breastfed), outlier.shape = NA, alpha=0.5) + 
+  labs (y=expression(Log["10"]~"N active temperate phages"), x="Timepoint", tag="c") + 
+  geom_boxplot(aes(color=infant_ever_never_breastfed), outlier.shape = NA, alpha=0.5, lwd=0.3) + 
   geom_sina(aes(color=infant_ever_never_breastfed), size=0.6) +
-  annotate(geom="text", x=3, y=250, label="p-value=0.03\nbeta=22.3", size=3) +
+  annotate(geom="text", x=3, y=250, label="p-value=0.01, beta=15.0", size=1.75) +
   theme_bw()+
-  theme(axis.text=element_text(size=10), 
-        axis.title=element_text(size=10,face="bold"),
-        legend.text = element_text(size=8),
-        legend.title = element_text(size=8, face="bold"),
-        plot.tag = element_text(face="bold")) +
+  theme(axis.text=element_text(size=5), 
+        axis.title=element_text(size=7),
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=7),
+        plot.tag = element_text(face="bold", size=7),
+        legend.key.size=unit(0.7, "line")) +
   scale_fill_manual(name = "Feeding mode", 
                     labels=c('Breastfed', 'Exclusively\nformula fed'),
                     values=c("#EA5455", "#002B5B")) +
@@ -765,56 +817,67 @@ Fig3C <- ggplot(VLP_metadata[!is.na(VLP_metadata$infant_ever_never_breastfed),],
          color=guide_legend(nrow=1, byrow=TRUE, title.position = 'top', title.hjust = 0.5))
 
 ##### Figure 3D #######
+lab_italics <- paste0("italic('", rownames(diff_ab_temperate), "')")
+selectLab_italics = paste0(
+  "italic('",
+  c('Bacteroides fragilis','Phocaeicola vulgatus','Bacteroides caccae', 'Bacteroides salyersiae'),
+  "')")
 Fig3D <- EnhancedVolcano(diff_ab_temperate,
-                         lab = rownames(diff_ab_temperate),
+                         lab = lab_italics, parseLabels = TRUE,
                          x = 'log2FC',
                          y = 'FDR', 
-                         ylim = c(0, -log10(1e-3)),
+                         ylim = c(0, -log10(1e-4)),
                          xlim = c(-6,6),
                          title = '',
                          pCutoff = 0.05,
                          #FCcutoff = 1.75,
                          drawConnectors = TRUE,
-                         labSize = 3.0,
+                         labSize = 1.75,
                          widthConnectors = 0.75,
                          boxedLabels = TRUE, 
                          colAlpha = 0.9,
                          colGradient = c('#B31312', '#2B2A4C'),
                          caption = "",
                          captionLabSize = 0, 
-                         titleLabSize = 0, 
-                         subtitleLabSize = 1,
+                         titleLabSize = 1, 
+                         subtitleLabSize = 0,
                          subtitle = "",
-                         selectLab = c('Bacteroides fragilis', 'Phocaeicola vulgatus','Bacteroides caccae', 'Bacteroides salyersiae'),
-                         axisLabSize = 10) + 
-  ggplot2::labs(y=expression(-Log["10"]~FDR), tag="d", color="FDR") +
-  ggplot2::annotate(geom="text", x=-3.7, y=3, label="Enriched in breastfed", size=3) +
-  ggplot2::annotate(geom="text", x=3.7, y=3, label="Enriched in formula fed", size=3) +
-  theme(axis.text=element_text(size=10), 
-        axis.title=element_text(size=10, face="bold"),
-        legend.text = element_text(size=8),
-        legend.title = element_text(size=8, face="bold"),
-        plot.tag = element_text(face="bold", size=14),
-        legend.position = "bottom")
+                         selectLab = selectLab_italics, #c('Bacteroides fragilis', 'Phocaeicola vulgatus','Bacteroides caccae', 'Bacteroides salyersiae'),
+                         axisLabSize = 5) + 
+  ggplot2::labs(y=expression(-Log["10"]~FDR), x=expression(Log["2"]~"fold change of N temperate phages per bacterial host"), tag="d", color="FDR") +
+  ggplot2::annotate(geom="text", x=-3.7, y=4, label="Enriched in breastfed", size=1.75) +
+  ggplot2::annotate(geom="text", x=3.7, y=4, label="Enriched in formula fed", size=1.75) +
+  ggplot2::ggtitle("Differential active temperate phage counts\nper bacterial host")+
+  theme(axis.text=element_text(size=5), 
+        axis.title=element_text(size=7),
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=7),
+        plot.tag = element_text(face="bold", size=7, vjust = -4),
+        plot.title = element_text(size=7, hjust=0.5, face='plain'),
+        legend.position = "bottom",
+        legend.key.size=unit(0.7, "line"))
 
 ##### Figure 3E #######
 
 Fig3E <- ggplot(sharedness_timepoints_melt, aes(Timepoint, value*100, fill=variable)) +
-  geom_boxplot(aes(color=variable), outlier.shape = NA, alpha=0.5) +
-  labs (y="%Infant vOTUs shared with active maternal virome", x="Infant Timepoint", tag='e') + 
+  geom_boxplot(aes(color=variable), outlier.shape = NA, alpha=0.5, lwd=0.3) +
+  labs (y="% infant vOTUs", x="Infant Timepoint", tag='e') + 
   geom_sina(aes(color=variable), size=0.6,alpha=0.5) +
-  annotate(geom="text", x=3, y=85, label="p-value=0.04\nbeta=3.3e-02", size=3) +
+  annotate(geom="text", x=3, y=85, label="p-value=0.04, beta=3.3e-02", size=1.75) +
   ylim(0,88) +
+  ggtitle("Shared with active maternal virome\n") +
   theme_bw()+
-  theme(axis.text=element_text(size=10), 
-        axis.title=element_text(size=10,face="bold"),
-        legend.text = element_text(size=8),
-        legend.title = element_text(size=8, face="bold"),
-        plot.tag = element_text(face="bold")) +
-  scale_fill_manual(name = "Maternal\nTimepoints", 
+  theme(axis.text=element_text(size=5), 
+        axis.title=element_text(size=7),
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=7),
+        plot.title = element_text(size=7, hjust=0.5),
+        plot.tag = element_text(face="bold", size=7, vjust=-4),
+        legend.key.size=unit(0.7, "line")) +
+  scale_fill_manual(name = "Maternal Timepoints", 
                     labels=c('Pre birth', 'Post birth'),
                     values=c("#F6830F", "#0E918C")) +
-  scale_color_manual(name = "Maternal\nTimepoints", 
+  scale_color_manual(name = "Maternal Timepoints", 
                      labels=c('Pre birth', 'Post birth'),
                      values=c("#F6830F", "#0E918C")) +
   guides(fill=guide_legend(nrow=1, byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
@@ -822,21 +885,23 @@ Fig3E <- ggplot(sharedness_timepoints_melt, aes(Timepoint, value*100, fill=varia
 
 ##### Figure 3F #######
 Fig3F <- ggplot(sharedness_timepoints_iVM_mVM_melt, aes(Timepoint, value*100, fill=variable)) +
-  geom_boxplot(aes(color=variable), outlier.shape = NA, alpha=0.5) +
-  labs (y="% Infant vOTUs shared with maternal virome", x="Infant Timepoint", tag="f") + 
+  geom_boxplot(aes(color=variable), outlier.shape = NA, alpha=0.5, lwd=0.3) +
+  labs (y="% infant vOTUs", x="Infant Timepoint", tag="f") + 
   geom_sina(aes(color=variable), size=0.6,alpha=0.5) +
-  annotate(geom="text", x=3, y=85, label="p-value=0.001\nmean increase 4.9%", size=3) +
+  annotate(geom="text", x=3, y=85, label="p-value=0.001, mean increase 4.9%", size=1.75) +
   ylim(0,88) +
+  ggtitle("Shared with prophage-inclusive\nmaternal virome") +
   theme_bw()+
-  theme(axis.text=element_text(size=10), 
-        axis.title=element_text(size=10,face="bold"),
-        legend.text = element_text(size=8),
-        legend.title = element_text(size=8, face="bold"),
-        plot.tag = element_text(face="bold")) +
-  scale_fill_manual(name = "Maternal\nTimepoints", 
+  theme(axis.text=element_text(size=5), 
+        axis.title=element_text(size=7),
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=7),plot.title = element_text(size=7, hjust=0.5),
+        plot.tag = element_text(face="bold", size=7, vjust=-4),
+        legend.key.size=unit(0.7, "line")) +
+  scale_fill_manual(name = "Maternal Timepoints", 
                     labels=c('Pre birth', 'Post birth'),
                     values=c("#F6830F", "#0E918C")) +
-  scale_color_manual(name = "Maternal\nTimepoints", 
+  scale_color_manual(name = "Maternal Timepoints", 
                      labels=c('Pre birth', 'Post birth'),
                      values=c("#F6830F", "#0E918C"))+ 
   guides(fill=guide_legend(nrow=1, byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
@@ -850,123 +915,133 @@ Fig3EF <- (Fig3E | Fig3F ) + plot_layout(ncol=2,guides="collect") & theme(legend
 
 Fig3DEF <- (Fig3D | Fig3EF) + plot_layout(widths=c(4, 6), guides="keep") & theme(legend.position = "bottom")
 
-Fig3 <- (Fig3ABC / Fig3DEF) + plot_layout(guides="keep") & theme(plot.title = element_text(size=10),
+Fig3 <- (Fig3ABC / Fig3DEF) + plot_layout(guides="keep") & theme(plot.title = element_text(size=7),
                                                                  legend.position = "bottom",
-                                                                   legend.title = element_text(size=10),
-                                                                   legend.text = element_text(size=10),
-                                                                   legend.margin=margin(0,0,0,0),
+                                                                   legend.title = element_text(size=7),
+                                                                   legend.text = element_text(size=5),
+                                                                   legend.margin=margin(-5,0,0,0),
                                                                    legend.box.margin=margin(-8,-10,-6,-10))
 
-pdf('Figures/Figure3/Fig3_2207.pdf', width=21/2.54, height=24/2.54)
+pdf('Figures/Figure3/Fig3_1512.pdf', width=18/2.54, height=14/2.54)
 Fig3 
 dev.off()
 
 ##### Figure 4A #######
 pvd_0 <- ggplot(plot_distances_select, aes(vector4analysis, easy_name, fill=factor4analysis)) + 
-  labs (y="Viruses", x="Log-scaled\nKimura distance", fill="Kinship", color="Kinship", tag='a') + 
-  geom_boxplot(outlier.shape = NA, alpha=0.3) +
+  labs (y="Viruses", x=expression(Log["10"]~"Kimura distance"), fill="Kinship", color="Kinship", tag='a') + 
   geom_sina(aes(color=factor4analysis), size=0.2, alpha=0.8) +
+  geom_boxplot(outlier.shape = NA, alpha=0.3, lwd=0.3) +
   theme_bw()+
   scale_x_log10() +
-  theme(axis.text=element_text(size=6), 
-        axis.title=element_text(size=6,face="bold"),
-        strip.text.x = element_text(size = 12),
-        legend.text = element_text(size=6),
-        legend.title = element_text(size=8, face="bold"),
+  theme(axis.text=element_text(size=5), 
+        axis.title=element_text(size=7),
+        #strip.text.x = element_text(size = 12),
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=7),
         #legend.position = "none",
-        plot.tag=element_text(face='bold')) +
+        plot.tag=element_text(face='bold', size=7),
+        legend.key.size=unit(0.7, "line"),
+        plot.margin = unit(c(0,-1,0,0), "cm")) +
   geom_stripes(odd = "#33333333", even = "#00000000") +
   scale_fill_manual(labels = c("Related", "Unrelated"), 
                     values=c("#17B971", "#7d8bb1")) + 
   scale_color_manual(labels = c("Related", "Unrelated"), 
                      values=c("#17B971", "#7d8bb1")) +
-  geom_text(data=plot_distances_select[plot_distances_select$factor4analysis=='Related',], aes(label = significance_level, x = Inf, vjust=2, y = easy_name), size = 3.5, angle=270) +
-  guides(fill=guide_legend(nrow=1, byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
-         color=guide_legend(nrow=1, byrow=TRUE, title.position = 'top', title.hjust = 0.5))
+  geom_text(data=plot_distances_select[plot_distances_select$factor4analysis=='Related',], aes(label = significance_level, x = Inf, vjust=2, y = easy_name), size = 2, angle=270) +
+  guides(fill=guide_legend(nrow=1, byrow=TRUE, title.position = 'left', title.hjust = 0.5), 
+         color=guide_legend(nrow=1, byrow=TRUE, title.position = 'left', title.hjust = 0.5))
 
 pvd_1 <- ggplot(N_pairwise_distance, aes(value, ContigID_easy, fill=variable) ) + 
-  geom_bar(stat='identity', position='dodge', color="black", alpha=0.5) +
+  geom_bar(stat='identity', position='dodge', color="black", alpha=0.5, lwd=0.3) +
   scale_x_log10(breaks=c(10^0, 10^1, 10^3)) + 
-  labs (y="", x="Log-scaled\nN distances",fill="Kinship") +
+  labs (y="", x=expression(Log["10"]~"N distances"),fill="Kinship") +
   theme_bw()+
-  theme(axis.text=element_text(size=6), 
-        axis.title=element_text(size=6,face="bold"),
-        strip.text.x = element_text(size = 12),
-        legend.text = element_text(size=6),
-        legend.title = element_text(size=8, face="bold"),
+  theme(axis.text=element_text(size=5), 
+        axis.title=element_text(size=7),
+        #strip.text.x = element_text(size = 12),
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=7),
         axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
-        legend.position = "none") +
+        legend.position = "none",
+        plot.margin = unit(c(0,0,0,-0.3), "cm")) +
   geom_stripes(odd = "#33333333", even = "#00000000") +
   scale_fill_manual(labels = c("Related", "Unrelated"), 
                     values=c("#17B971", "#7d8bb1")) +
-  guides(fill = "none")
+  guides(fill = "none") 
 
-Fig4A <- pvd_0 + pvd_1 +
-  plot_layout(ncol = 2, nrow = 1, guides="collect", widths = c(8.5, 1.5)) + 
+Fig4A <- pvd_0  + pvd_1 +
+  plot_layout(ncol = 2, nrow = 1, guides="collect", widths = c(8.5,1.5)) + 
   plot_annotation(title = "") & theme(legend.position = "bottom",
                                       plot.title = element_text(size=0),
-                                      legend.title = element_text(size=10),
-                                      legend.text = element_text(size=10),
+                                      legend.title = element_text(size=7),
+                                      legend.text = element_text(size=5),
                                       legend.margin=margin(0,0,0,0),
                                       legend.box.margin=margin(1,-5,-5,-5)) & guides(color="none")
 
 ##### Figure 4B #######
-Fig4B <- ggplot(for_plot, aes(value, ContigID_easy, fill=variable)) + 
+Fig4B <- ggplot(for_plot, aes(value*100, ContigID_easy, fill=variable)) + 
   geom_col(position = 'dodge', alpha=1) +
-  labs (y="Viruses", x="% mother-infant sample\npairs with shared virus", tag="b") + 
+  labs (y="Viruses", x="% mother-infant sample pairs sharing virus", tag="b") + 
   theme_bw()+
-  theme(axis.text=element_text(size=6), 
-        axis.title=element_text(size=6,face="bold"),
-        legend.text = element_text(size=6),
-        legend.title = element_text(size=7, face="bold"), 
+  theme(axis.text=element_text(size=5), 
+        axis.title=element_text(size=7),
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=7), 
         legend.position = 'bottom',
-        plot.tag = element_text(face='bold')) +
-  labs(fill="Kinship") + 
+        plot.tag = element_text(face='bold', size=7),
+        legend.key.size=unit(0.7, "line")) +
+  labs(fill="") + 
   geom_stripes(odd = "#33333333", even = "#00000000") +
   scale_fill_manual(labels = c("Related", "Unrelated"), 
                     values=c("#17B971", "#7d8bb1")) +
-  geom_text(data=for_plot[for_plot$variable=='Perc_related_pairs_transmitted',], aes(label = significance_level_transmission, x = 1.05, y = ContigID_easy), size = 2, angle=270) + 
-  guides(fill=guide_legend(nrow=1, byrow=TRUE, title.position = 'top', title.hjust = 0.5))
+  geom_text(data=for_plot[for_plot$variable=='Perc_related_pairs_transmitted',], aes(label = significance_level_transmission, x = 105, y = ContigID_easy), size = 1.75, angle=270) + 
+  guides(fill=guide_legend(nrow=1, byrow=TRUE, title.position = 'left', title.hjust = 0.5))
 
 ##### Figure 4C #######
+plot_distances_select_bac$easy_species_names <- paste0('*', gsub('_.*', '', plot_distances_select_bac$species_names), '*', '<br>', '(', plot_distances_select_bac$bacterium_name, ')')
+
 pbd_0 <- ggplot(plot_distances_select_bac, aes(vector4analysis, ord, fill=factor4analysis)) + 
-  labs (y="Bacterial strains", x="Log-scaled Kimura distance", tag="c") + 
-  geom_boxplot(outlier.shape = NA,alpha=0.3) +
+  labs (y="Bacterial strains", x=expression(Log["10"]~"Kimura distance"), tag="c") + 
   geom_sina(aes(color=factor4analysis), size=0.2, alpha=0.8) +
+  geom_boxplot(outlier.shape = NA,alpha=0.3, lwd=0.3) +
   theme_bw()+
-  scale_y_discrete(labels = setNames(as.character(plot_distances_select_bac$species_name), plot_distances_select_bac$ord)) +
+  scale_y_discrete(labels = setNames(as.character(plot_distances_select_bac$easy_species_names), plot_distances_select_bac$ord)) +
   scale_x_log10(breaks=c(1e-01, 1e+00, 1e+01, 1e+02), labels = function(x) format(x, scientific = TRUE)) +
-  theme(axis.text=element_text(size=6), 
-        axis.title=element_text(size=6,face="bold"),
-        legend.text = element_text(size=6),
-        legend.title = element_text(size=8, face="bold"),
-        plot.tag = element_text(face="bold")) +
+  theme(axis.text=element_text(size=5),
+        axis.text.y = ggtext::element_markdown(),
+        axis.title=element_text(size=7),
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=7),
+        plot.tag = element_text(face="bold", size=7), 
+        legend.key.size=unit(0.7, "line"),
+        plot.margin = unit(c(0,-1,0,0), "cm")) +
   labs(fill="Kinship", color="") + 
   geom_stripes(odd = "#33333333", even = "#00000000") +
   scale_fill_manual(labels = c("Related", "Unrelated"), 
                     values=c("#17B971", "#7d8bb1")) + 
   scale_color_manual(labels = c("Related", "Unrelated"), 
                      values=c("#17B971", "#7d8bb1")) +
-  geom_text(data=plot_distances_select_bac[plot_distances_select_bac$factor4analysis=='Related',], aes(label = significance_level, x = Inf, vjust=2, y = ord), size = 4, angle=270) +
-  guides(fill=guide_legend(nrow=1, byrow=TRUE, title.position = 'top', title.hjust = 0.5), 
+  geom_text(data=plot_distances_select_bac[plot_distances_select_bac$factor4analysis=='Related',], aes(label = significance_level, x = Inf, vjust=2, y = ord), size = 1.75, angle=270) +
+  guides(fill=guide_legend(nrow=1, byrow=TRUE, title.position = 'left', title.hjust = 0.5), 
          color="none")
 
 pbd_1 <-  ggplot(N_pairwise_distance_bac, aes(value, ord, fill=variable) ) + 
-  geom_bar(stat='identity', position='dodge', color="black", alpha=0.5) +
+  geom_bar(stat='identity', position='dodge', color="black", alpha=0.5, lwd=0.3) +
   scale_y_discrete(labels = setNames(as.character(N_pairwise_distance_bac$species_name), N_pairwise_distance_bac$ord)) +
   scale_x_log10(breaks=c(10^0, 10^1, 10^3)) + 
-  labs (y="", x="Log-scaled\nN distances") +
+  labs (y="", x=expression(Log["10"]~"N distances")) +
   theme_bw()+
-  theme(axis.text=element_text(size=6), 
-        axis.title=element_text(size=6,face="bold"),
-        strip.text.x = element_text(size = 12),
-        legend.text = element_text(size=6),
-        legend.title = element_text(size=8, face="bold"),
+  theme(axis.text=element_text(size=5), 
+        axis.title=element_text(size=7),
+        #strip.text.x = element_text(size = 12),
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=7),
         axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
-        legend.position = "none") +
-  labs(fill="Kinship")+
+        legend.position = "none",
+        plot.margin = unit(c(0,0,0,-0.3), "cm")) +
+  labs(fill="")+
   geom_stripes(odd = "#33333333", even = "#00000000") +
   scale_fill_manual(labels = c("Related", "Unrelated"), 
                     values=c("#17B971", "#7d8bb1")) +
@@ -976,42 +1051,51 @@ Fig4C <- pbd_0 + pbd_1 +
   plot_layout(ncol = 2, nrow = 1, guides="collect", widths = c(8, 2)) + 
   plot_annotation(title = "") & theme(legend.position = "bottom",
                                       plot.title = element_text(size=0),
-                                      legend.title = element_text(size=10),
-                                      legend.text = element_text(size=10),
+                                      legend.title = element_text(size=7),
+                                      legend.text = element_text(size=5),
                                       legend.margin=margin(0,0,0,0),
                                       legend.box.margin=margin(1,-5,-5,-5)) & guides(color="none")
 
 ##### Figure 4D #######
-Fig4D <- ggplot(for_plot_bac, aes(value, ord, fill=variable)) + 
+for_plot_bac$easy_species_names <- paste0('*', gsub('_.*', '', for_plot_bac$species_names), '*', '<br>', '(', for_plot_bac$Host_SGB, ')')
+
+Fig4D <- ggplot(for_plot_bac, aes(value*100, ord, fill=variable)) + 
   geom_col(position = 'dodge', alpha=0.8) +
-  labs (y="Bacterial strains", x="% mother-infant sample\npairs with shared bacterium", tag="d") + 
-  scale_y_discrete(labels = setNames(as.character(for_plot_bac$species_name), for_plot_bac$ord)) +
+  labs (y="Bacterial strains", x="% mother-infant sample pairs sharing strain", tag="d") + 
+  scale_y_discrete(labels = setNames(as.character(for_plot_bac$easy_species_names), for_plot_bac$ord)) +
   theme_bw()+
-  theme(axis.text=element_text(size=6), 
-        axis.title=element_text(size=6,face="bold"),
-        legend.text = element_text(size=6),
-        legend.title = element_text(size=7, face="bold"),
+  theme(axis.text=element_text(size=5), 
+        axis.title=element_text(size=7),
+        axis.title.x = element_text(size=7, hjust=0.7),
+        axis.text.y = ggtext::element_markdown(),
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=7),
         legend.position = "bottom",
-        plot.tag = element_text(face="bold")) +
-  labs(fill="Kinship") + 
+        plot.tag = element_text(face="bold", size=7),
+        legend.key.size=unit(0.7, "line")) +
+  labs(fill="") + 
   geom_stripes(odd = "#33333333", even = "#00000000") +
   scale_fill_manual(labels = c("Related", "Unrelated"), 
                     values=c("#17B971", "#7d8bb1")) +
-  geom_text(aes(label = significance_level_transmission, x = 1.05, y = ord), size = 1.6, angle=270) +
-  guides(fill=guide_legend(nrow=1, byrow=TRUE, title.position = 'top', title.hjust = 0.5))
+  geom_text(aes(label = significance_level_transmission, x = 105, y = ord), size = 1.75, angle=270) +
+  guides(fill=guide_legend(nrow=1, byrow=TRUE, title.position = 'left', title.hjust = 0.5))
 
-Fig4AB <- (pvd_0 | pvd_1 | Fig4B ) + plot_layout(ncol=3, widths = c(4,2,4),guides="keep") & theme(legend.position = "bottom") & guides(color="none")
-Fig4CD <- (pbd_0 | pbd_1 | Fig4D) + plot_layout(ncol=3, widths = c(4,2,4),guides="keep") & theme(legend.position = "bottom") & guides(color="none")
+Fig4AB <- (pvd_0 | pvd_1 | Fig4B ) + plot_layout(ncol=3, widths = c(4,2,4),guides="collect") & theme(legend.position = "bottom", 
+                                                                                                  plot.margin = margin(0,2,0,0),
+                                                                                                  legend.margin=margin(0,0,0,0),
+                                                                                                  legend.box.margin=margin(-10,0,0,0)) & guides(color="none")
+Fig4CD <- (pbd_0 | pbd_1 | Fig4D) + plot_layout(ncol=3, widths = c(4,2.2,3.8),guides="collect") & theme(legend.position = "bottom", 
+                                                                                                     plot.margin = margin(-9,2,-2.5,0),
+                                                                                                     legend.margin=margin(0,0,0,0),
+                                                                                                     legend.box.margin=margin(-10,0,0,0)) & guides(color="none")
 
-Fig4ABCD <- wrap_elements(Fig4AB) / wrap_elements(Fig4CD)+ plot_layout(guides="keep", widths = c(4,4)) & theme(legend.position = "bottom",
-                                                                                                               axis.text = element_text(size=8),                                       
+Fig4ABCD <- wrap_elements(Fig4AB) / wrap_elements(Fig4CD)+ plot_layout(guides="keep", widths = c(4,4), heights = c(4.95, 5.05)) & theme(legend.position = "bottom",
+                                                                                                               axis.text = element_text(size=7),                                       
                                                                                                                plot.title = element_text(size=0),
-                                                                                                               legend.title = element_text(size=10),
-                                                                                                               legend.text = element_text(size=10),
-                                                                                                               legend.margin=margin(0,0,0,0),
-                                                                                                               legend.box.margin=margin(-5,-5,-5,-5))
+                                                                                                               legend.title = element_text(size=7),
+                                                                                                               legend.text = element_text(size=5))
 
-pdf('Figures/Figure4/Fig4_2207.pdf', width=21/2.54, height=30/2.54)
+pdf('Figures/Figure4/Fig4_1512.pdf', width=18/2.54, height=21/2.54)
 Fig4ABCD
 dev.off()
 
@@ -1019,7 +1103,7 @@ dev.off()
 
 ##### Figure 5A #####
 pdf('./Figures/Figure5/Fig5A.pdf', width=21/2.54, height=19/2.54)
-corrplot(bgcolors, na.label = "square", na.label.col = "#FC3C3C", tl.col = "white")
+corrplot(bgcolors, na.label = "square", addgrid.col = NA, na.label.col = "#FC3C3C", tl.col = "white")
 corrplot(co_transmission_cor,
          bg=NA,
          p.mat=co_transmission_FDR, 
@@ -1029,78 +1113,102 @@ corrplot(co_transmission_cor,
          na.label.col = "lightgrey", 
          tl.col='black', 
          add = T,
+        #outline=F,
          addgrid.col="darkgrey",
+         number.cex=1, #X signs
+         cl.cex=1, # X-axis text
+         tl.cex = 1, # Y-axis text
          col=colorRampPalette(c("#FFFFFF","#828AB1","#041562"))(100), cl.pos="b")
 dev.off()
 
 ##### Figure 5B #####
 Fig5B <- ggplot(cotransmission_stat, aes(x=Var2, y=prop, width=paired.count, fill=Var1)) + 
-  labs(x="Virus - predicted host pair", y="Proportion", fill="Transmission pattern", tag="b") + 
+  labs(x="Virus - predicted host pair", y="", fill="Transmission\npattern", tag="b") + 
   geom_bar(stat = "identity", position = "fill", colour = "black") + 
-  geom_text(aes(label = scales::percent(prop)), position = position_stack(vjust = 0.5), size=3) +
+  geom_text(aes(label = scales::percent(prop)), position = position_stack(vjust = 0.5), size=2) +
   facet_grid(~Var2, scales = "free_x", space = "free_x")  +
-  scale_fill_manual(labels=c("Cotransmitted", "Not-cotransmitted"),values=c(Kandinsky[1],Kandinsky[2])) + 
+  scale_fill_manual(labels=c("Co-transmitted", "Not co-transmitted"),values=c(Kandinsky[1],Kandinsky[2])) + 
+  scale_y_continuous(breaks = c(0.28, 0.78), labels = c('Co-transmitted', 'Not co-transmitted')) +
   theme_linedraw() +
   theme(panel.grid = element_blank(), 
         strip.background = element_blank(),
         strip.text.x = element_blank(),
-        axis.text=element_text(size=8), 
-        axis.title=element_text(size=8,face="bold"),
+        axis.text=element_text(size=5), 
+        axis.text.y = element_text(size=5, angle=90, hjust=0.5),
+        axis.title=element_text(size=7),
         panel.spacing.x = unit(0, "npc"),
-        legend.text = element_text(size=8),
-        legend.title = element_text(size=10, face="bold"),
-        plot.tag = element_text(face="bold"),
-        legend.position = "bottom") + 
+        legend.text = element_text(size=5, hjust=0.5),
+        legend.title = element_text(size=7),
+        plot.tag = element_text(face="bold", size=7),
+        legend.position = "right",
+        legend.key.size=unit(0.7, "line"),
+        legend.margin=margin(0,0,0,0),
+        legend.box.margin=margin(-10,0,0,0)) + 
   guides(fill = guide_legend(nrow=2, title.position = "top"))
 
-pdf("Figures/Figure5/Fig5B.pdf", width=8/2.54, height=15/2.54)
+pdf("Figures/Figure5/Fig5B.pdf", width=8/2.54, height=7.5/2.54)
 Fig5B
 dev.off()
 ##### Figure 5C #####
 ptv1 <- phylo_L_85266_LS0 + 
-  geom_tippoint(aes(shape = Type, fill = FAMILY, color=Sequencing), size = 3, stroke=1) +
+  geom_tippoint(aes(shape = Type, fill = FAMILY, color=Sequencing), size = 1.75, stroke=0.5) +
   scale_shape_manual(values=c("Mother" = 21, "Infant 1"=24, "Infant 2"=23)) + 
   scale_fill_manual(values=setNames(L_85266_LS0_label_colors_family$color, L_85266_LS0_label_colors_family$L_85266_LS0_FAMs)) + 
   guides(color="none") +
-  geom_tiplab(aes(label=tree_ID, color=tree_ID), offset=0.3, size=3) + 
+  geom_tiplab(aes(label=tree_ID, color=tree_ID), offset=0.3, size=1.75) + 
   scale_color_manual(values=setNames(L_85266_LS0_label_colors$color, L_85266_LS0_label_colors$L_85266_LS0_SAMs)) +
   ggnewscale::new_scale_colour() +
-  geom_tippoint(aes(shape = Type, fill = FAMILY, colour = Sequencing), size = 3, stroke=1) +
-  scale_colour_manual(values = c("VLP"="black", "MGS"="grey")) + 
+  geom_tippoint(aes(shape = Type, fill = FAMILY, colour = Sequencing), size = 1.75, stroke=0.5) +
+  scale_colour_manual(values = c("black", "grey"), labels=c("VLP metavirome", "MGS metavirome\nTotal metagenome")) + 
   geom_treescale() +
-  guides(shape = guide_legend(override.aes = list(color = NULL)),
-         fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+  guides(#shape = guide_legend(override.aes = list(color = NULL)),
+         fill = guide_legend(override.aes = list(shape = 21,  stroke = NA))) +
   ggtitle("L85266_LS0") +
   xlim(0, 8) +
-  labs(tag="b") +
-  theme(plot.tag = element_text(face="bold"))
+  labs(tag="c", colour="Strain source", shape="Family member", fill="Family") +
+  theme(plot.tag = element_text(face="bold", size=7),
+        plot.title = element_text(size=7),
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=5),
+        legend.key.size=unit(0.7, "line"),
+        legend.margin=margin(0,0,0,0),
+        legend.box.margin=margin(-10,0,0,0),
+        plot.margin = margin(0,0,0,0))
 
 ptb1 <- phylo_Host_L_85266_LS0 +
-  geom_tippoint(aes(shape = Type, fill = FAMILY, color = Sequencing), size = 3, stroke=1) +
+  geom_tippoint(aes(shape = Type, fill = FAMILY, color = Sequencing), size = 1.75, stroke=0.5) +
   scale_shape_manual(values=c("Mother" = 21, "Infant 1"=24, "Infant 2"=23)) + 
   scale_fill_manual(values=setNames(L_85266_LS0_label_colors_family$color, L_85266_LS0_label_colors_family$L_85266_LS0_FAMs)) + 
   guides(color="none") +
-  geom_tiplab(aes(label=tree_ID, color=tree_ID), offset=0.3, size=3) + 
+  geom_tiplab(aes(label=tree_ID, color=tree_ID), offset=0.3, size=1.75) + 
   scale_color_manual(values=setNames(Host_L_85266_LS0_label_colors_bac$color, Host_L_85266_LS0_label_colors_bac$Host_L_85266_LS0)) +
   ggnewscale::new_scale_colour() +
-  geom_tippoint(aes(shape = Type, fill = FAMILY, colour = Sequencing), size = 3, stroke=1) +
-  scale_colour_manual(values = c("VLP"="black", "MGS"="grey")) + 
+  geom_tippoint(aes(shape = Type, fill = FAMILY, colour = Sequencing), size = 1.75, stroke=0.5) +
+  scale_colour_manual(values = c("grey","black"), labels=c("MGS metavirome\nTotal metagenome","VLP metavirome")) + 
   geom_treescale() +
   guides(shape = guide_legend(override.aes = list(color = NULL)),
-         fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
-  ggtitle("Bacteroides uniformis") + 
-  xlim(0, 4) 
+         fill = guide_legend(override.aes = list(shape = 21, stroke = NA))) +
+  ggtitle("*Bacteroides uniformis*") + 
+  xlim(0, 4) +
+  labs(colour="Strain source", shape="Family member", fill="Family") +
+  theme(plot.title = ggtext::element_markdown(size=7),
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=5),
+        legend.key.size=unit(0.7, "line"),
+        legend.margin=margin(0,0,0,0),
+        legend.box.margin=margin(-10,0,0,0),
+        plot.margin = margin(0,0,0,0))
 
 
 Fig5C <- (ptv1 | ptb1 ) + 
   plot_layout(ncol=2, guides="collect") & 
   theme(legend.position = "right") & 
   guides(shape = guide_legend(override.aes = list(color = NULL), nrow=3, title.position = 'top', title.hjust = 0.5),
-         fill = guide_legend(override.aes = list(shape = 21, color = "black"), nrow=7, title.position = 'top', title.hjust = 0.5),
+         fill = guide_legend(override.aes = list(shape = 21, stroke=NA), nrow=7, title.position = 'top', title.hjust = 0.5),
          color = guide_legend(override.aes = list(shape=16), nrow=2, title.position = 'top', title.hjust = 0.5))
 
 
-pdf('Figures/Figure5/Fig5C.pdf', width=25/2.54, height=25/2.54)
+pdf('Figures/Figure5/Fig5C.pdf', width=18/2.54, height=13.5/2.54)
 Fig5C 
 dev.off()
 
@@ -1108,44 +1216,57 @@ dev.off()
 
 ##### Figure 6A #######
 Fig6A_v <- phylo_L34922_LS1 + 
-  geom_tippoint(aes(shape = Type, fill = FAMILY, color=Sequencing), size = 3, stroke=1) +
+  geom_tippoint(aes(shape = Type, fill = FAMILY, color=Sequencing), size = 1.75, stroke=0.5) +
   scale_shape_manual(values=c("Mother" = 21, "Infant 1"=24, "Infant 2"=23)) + 
   scale_fill_manual(values=setNames(L34922_LS1_label_colors_family$color, L34922_LS1_label_colors_family$L34922_LS1_FAMs)) + 
   guides(color="none") +
-  geom_tiplab(aes(label=tree_ID, color=tree_ID), offset=0.9, size=3) + 
+  geom_tiplab(aes(label=tree_ID, color=tree_ID), offset=0.9, size=1.75) + 
   scale_color_manual(values=setNames(L34922_LS1_label_colors$color, L34922_LS1_label_colors$L34922_LS1_SAMs)) +
   ggnewscale::new_scale_colour() +
-  geom_tippoint(aes(shape = Type, fill = FAMILY, colour = Sequencing), size = 3, stroke=1) +
-  scale_colour_manual(values = c("VLP"="black", "MGS"="grey")) + 
+  geom_tippoint(aes(shape = Type, fill = FAMILY, colour = Sequencing), size = 1.75, stroke=0.5) +
+  scale_colour_manual(values = c("grey","black"), labels=c("MGS metavirome\nTotal metagenome","VLP metavirome")) + 
   geom_treescale() +
   guides(shape = guide_legend(override.aes = list(color = NULL)),
-         fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+         fill = guide_legend(override.aes = list(shape = 21, stroke = NA))) +
   ggtitle("L34922_LS1") +
   xlim(0, 20) +
-  labs(tag="a") +
-  theme(plot.tag = element_text(face="bold"))
+  labs(tag="a", colour="Strain source", shape="Family member", fill="Family") +
+  theme(plot.tag = element_text(face="bold", size=7),
+        plot.title = element_text(size=7),
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=5),
+        legend.key.size=unit(0.7, "line"),
+        legend.margin=margin(0,0,0,0),
+        legend.box.margin=margin(0,0,0,0))
 
 Fig6A_b <- phylo_Host_L34922_LS1 + 
-  geom_tippoint(aes(shape = Type, fill = FAMILY, color = Sequencing), size = 3, stroke=1) +
+  geom_tippoint(aes(shape = Type, fill = FAMILY, color = Sequencing), size = 1.75, stroke=0.5) +
   scale_shape_manual(values=c("Mother" = 21, "Infant 1"=24, "Infant 2"=23)) + 
   scale_fill_manual(values=setNames(L34922_LS1_label_colors_family$color, L34922_LS1_label_colors_family$L34922_LS1_FAMs)) + 
   guides(color="none") +
-  geom_tiplab(aes(label=tree_ID, color=tree_ID), offset=0.02, size=3) + 
+  geom_tiplab(aes(label=tree_ID, color=tree_ID), offset=0.02, size=1.75) + 
   scale_color_manual(values=setNames(Host_L34922_LS1_label_colors_bac$color, Host_L34922_LS1_label_colors_bac$Host_L34922_LS1)) +
   ggnewscale::new_scale_colour() +
-  geom_tippoint(aes(shape = Type, fill = FAMILY, colour = Sequencing), size = 3, stroke=1) +
-  scale_colour_manual(values = c("VLP"="black", "MGS"="grey")) + 
+  geom_tippoint(aes(shape = Type, fill = FAMILY, colour = Sequencing), size = 1.75, stroke=0.5) +
+  scale_colour_manual(values = c("grey","black"), labels=c("MGS metavirome\nTotal metagenome","VLP metavirome")) + 
   geom_treescale() +
   guides(shape = guide_legend(override.aes = list(color = NULL)),
-         fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
-  ggtitle("Bifidobacterium bifidum") + 
-  xlim(0, 0.8) 
+         fill = guide_legend(override.aes = list(shape = 21, stroke = NA))) +
+  ggtitle("*Bifidobacterium bifidum* <br> (SGB17256)") + 
+  labs(colour="Strain source", shape="Family member", fill="Family") +
+  xlim(0, 0.8) +
+  theme(plot.title = ggtext::element_markdown(size=7),
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=5),
+        legend.key.size=unit(0.7, "line"),
+        legend.margin=margin(0,0,0,0),
+        legend.box.margin=margin(0,0,0,0))
 
 Fig6A <- (Fig6A_v | Fig6A_b) + 
   plot_layout(ncol=2, guides="collect") & 
   theme(legend.position = "right") & 
   guides(shape = guide_legend(override.aes = list(color = NULL), nrow=3, title.position = 'top', title.hjust = 0.5),
-         fill = guide_legend(override.aes = list(shape = 21, color = "black"), nrow=7, title.position = 'top', title.hjust = 0.5),
+         fill = guide_legend(override.aes = list(shape = 21, stroke=NA), nrow=7, title.position = 'top', title.hjust = 0.5),
          color = guide_legend(override.aes = list(shape=16), nrow=2, title.position = 'top', title.hjust = 0.5))
 
 ##### Figure 6B #######
@@ -1156,7 +1277,7 @@ Fig6B <- ggplot(Host_L34922_LS1_copresence) +
   labs(x="Timepoint", y="", tag="b") +
   geom_polygon(aes(x = xdown, y = ydown, fill = VLP, group = interaction(Type, Timepoint)), color = "black") +
   scale_fill_manual(values=c('white', '#D72323', '#7F7F7F'),  limits = c("0", "1", "NA")) +
-  ggtitle("Presence patterns\nof L34922_LS1 and\nBifidobacterium bifidum") +
+  ggtitle("Presence patterns<br>of L34922_LS1 and<br>*Bifidobacterium bifidum*") +
   scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6, 7, 8, 9), 
                      labels = levels(Host_L34922_LS1_copresence$Timepoint)) +
   scale_y_continuous(breaks = c(1,3),
@@ -1164,10 +1285,14 @@ Fig6B <- ggplot(Host_L34922_LS1_copresence) +
   coord_equal() + 
   theme_linedraw() +
   theme(panel.grid = element_blank(), 
-        axis.title = element_text(face="bold"),
+        axis.title = element_text(size=7),
+        axis.text = element_text(size=5),
         legend.position = "right",
-        plot.tag=element_text(face="bold"),
-        plot.title = element_text(size=8, face="bold")) + 
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=5),
+        plot.tag=element_text(face="bold", size=7),
+        plot.title = ggtext::element_markdown(size=7),
+        legend.key.size=unit(0.7, "line")) + 
   guides(fill= guide_legend("Presence", title.position = "top", title.hjust = 0.5))
 
 ##### Figure 6C #######
@@ -1179,57 +1304,78 @@ Fig6C <- plot_synteny(L34922_LS1_to_B.bifidum_patch_ali,
   labs(tag="c") +
   theme_linedraw() +
   theme(panel.grid = element_blank(), 
-        axis.title = element_text(face="bold"), 
-        axis.text.y = element_text(face="bold"), 
-        plot.tag = element_text(face="bold")) +
-  annotate(geom="text", x = 750000, y=1.5, label="ANI > 99%\ncoverage=100%\ne-value=0")
+        axis.title = element_text(size=7), 
+        axis.text.x = element_text(size=5), 
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        plot.tag = element_text(face="bold", size=7)) +
+  annotate(geom="text", x = 750000, y=1.5, label="ANI > 99%\ncoverage=100%\ne-value=0", size=1.75) + 
+  annotate(geom="text", x = 500000, y=0.70, label="B. bifidum patched genome fragment", size=1.75) + 
+  annotate(geom="text", x=500000, y=2.3, label="L34922_LS1", size=1.75)
 
 ##### Figure 6D #######
 Fig6D <-  gggenomes(genes=bifidophages_genes[bifidophages_genes$seq_id=='L34922_LS1',], 
                     seqs=bifidophages_seqs[bifidophages_seqs$seq_id=='L34922_LS1',]) + 
   geom_seq() +         # draw contig/chromosome lines
-  geom_bin_label(size=3) +   # label each sequence 
+  geom_bin_label(size=1.75) +   # label each sequence 
   geom_gene(aes(fill=Color)) +         # draw genes as arrow
-  geom_gene_label(aes(label=VOG_name_ed), size=3, vjust = 1) +
-  labs(tag='d', fill='Gene annotation') +
-  scale_fill_manual(values=c('#205375', '#F66B0E', '#EFEFEF')) + 
+  geom_gene_label(aes(label=VOG_name_ed), size=1.75, vjust = 1) +
+  labs(tag='d', fill='Genome coordinate, kb\nGene annotation source') +
+  #ggtitle("Gene annotation") +
+  scale_fill_manual(values=c('#205375', '#EFEFEF', '#F66B0E')) + 
   theme(legend.position = "bottom",
-        plot.tag=element_text(face="bold")) + 
+        plot.tag=element_text(face="bold", size=7, vjust=-3.5), 
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=5),
+        axis.title = element_text(size=7),
+        axis.text = element_text(size=5),
+        plot.title = element_text(size=7),
+        legend.key.size=unit(0.7, "line")) + 
   guides(fill=guide_legend(title.position = "top", title.hjust=0.5))
 
 
 ##### Figure 6E #######
-Fig6E <- ggplot(L34922_LS1_MGS_reads, aes(w_center, value, group=variable, color=color_factor, size=width)) +
+Fig6E <- ggplot(L34922_LS1_MGS_reads, aes(w_center/1000, value, group=variable, color=color_factor, size=width)) +
   geom_line() + 
-  xlim(0, 150000) + 
-  labs(x="B. bifidum patched genome fragment", y="Mean MGS read depth (log10)", color="Timepoint", tag='e') +
+  xlim(0, 150) + 
+  labs(x="*B. bifidum* patched genome fragment coordinate, kb", y="Log<sub>10</sub> total metagenome<br>mean read depth", color="Timepoint", tag='e') +
   scale_y_log10() + 
-  scale_size_manual(values=c(1, 0.5), guide=FALSE) +
+  scale_size_manual(values=c(0.5, 0.1), guide=FALSE) +
   scale_color_manual(values=L34922_LS1_read_align_colors$Color) + 
   theme_bw() + 
   theme(legend.position = "bottom",
-        plot.tag = element_text(face="bold")) + 
-  guides(color=guide_legend(nrow=3, title.position="top", title.hjust = 0.5)) + 
+        plot.tag = element_text(face="bold", size=7),
+        axis.title.x = ggtext::element_markdown(size=7),
+        axis.title.y = ggtext::element_markdown(size=7),
+        axis.text = element_text(size=5),
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=5)) + 
+  guides(color=guide_legend(nrow=2, title.position="top", title.hjust = 0.5)) + 
   ggnewscale::new_scale_color() +
-  geom_vline(data=L34922_LS1_prophage_region, aes(xintercept=coordinate, color="Prophage region"), size=1, linetype="dashed") + 
+  geom_vline(data=L34922_LS1_prophage_region, aes(xintercept=coordinate/1000, color="Prophage region"), size=0.5, linetype="dashed") + 
   scale_color_manual(name="",
                      values=c(`Prophage region`="black"), 
                      guide = guide_legend(order = 3)) 
 
 ##### Figure 6F #######
-Fig6F <- ggplot(L34922_LS1_VLP_reads, aes(w_center, value, group=variable, color=color_factor, size=width)) +
-  geom_line() + 
-  xlim(0, 150000) + 
-  labs(x="B. bifidum patched genome fragment", y="Mean VLP read depth (log10)", color="Timepoint", tag='f') +
+Fig6F <- ggplot(L34922_LS1_VLP_reads, aes(w_center/1000, value, group=variable, color=color_factor, size=width)) +
+  geom_line(show.legend = F) + 
+  xlim(0, 150) + 
+  labs(x="*B. bifidum* patched genome fragment coordinate, kb", y="Log<sub>10</sub> VLP metavirome<br> mean read depth", color="Timepoint", tag='f') +
   scale_y_log10() + 
-  scale_size_manual(values=c(1, 0.5), guide=FALSE) +
+  scale_size_manual(values=c(0.5, 0.1), guide=FALSE) +
   scale_color_manual(values=L34922_LS1_read_align_colors$Color) + 
   theme_bw() + 
-  theme(legend.position = "bottom",
-        plot.tag = element_text(face="bold")) + 
-  guides(color=guide_legend(nrow=3, title.position="top", title.hjust = 0.5)) + 
+  theme(legend.position = "none",
+        plot.tag = element_text(face="bold", size=7),
+        axis.title.x = ggtext::element_markdown(size=7),
+        axis.title.y = ggtext::element_markdown(size=7),
+        axis.text = element_text(size=5),
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=5)) + 
+  guides(color=guide_legend(nrow=4, title.position="top", title.hjust = 0.5)) + 
   ggnewscale::new_scale_color() +
-  geom_vline(data=L34922_LS1_prophage_region, aes(xintercept=coordinate, color="Prophage region"), size=1, linetype="dashed") + 
+  geom_vline(data=L34922_LS1_prophage_region, aes(xintercept=coordinate/1000, color="Prophage region"), size=0.5, linetype="dashed") + 
   scale_color_manual(name="",
                      values=c(`Prophage region`="black"), 
                      guide = guide_legend(order = 3)) 
@@ -1244,14 +1390,14 @@ Fig6BC <- (Fig6B | Fig6C) + plot_layout(ncol = 2, guides="keep") &
 Fig6EF <- (Fig6E | Fig6F) + plot_layout(ncol = 2, guides="collect") & 
   theme(legend.position = "bottom")
 
-pdf('Figures/Figure6/Fig6_2207.pdf', width=25/2.54, height=33/2.54)
+pdf('Figures/Figure6/Fig6_1712_ed.pdf', width=18/2.54, height=21/2.54)
 (Fig6A / Fig6BC / Fig6D / Fig6EF) + plot_layout(heights=c(6,2,4,5),guides="keep")
 dev.off()
 
-pdf('Figures/Figure6/Fig6C.pdf', width=12/2.54, height=8/2.54)
+pdf('Figures/Figure6/Fig6C.pdf', width=26/2.54, height=10/2.54)
 (Fig6C) 
 dev.off()
 
-pdf('Figures/Figure6/Fig6D.pdf', width=25/2.54, height=12/2.54)
+pdf('Figures/Figure6/Fig6D.pdf', width=18/2.54, height=8/2.54)
 (Fig6D) 
 dev.off()
