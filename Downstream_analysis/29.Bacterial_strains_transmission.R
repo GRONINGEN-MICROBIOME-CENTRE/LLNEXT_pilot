@@ -41,7 +41,7 @@ bacterium <- lapply(bacterium, function(x) {
   x
 })
 
-## since my there are strains that are not present in Infants 
+## there are strains that are not present in Infants / Mothers
 bacterium_to_test <- list()
 for (n in 1:NROW(bacterium)) {
   
@@ -74,6 +74,7 @@ selected_viruses[is.na(selected_viruses$Host_in_metaphlan),]$Host_in_strainphlan
 
 selected_viruses <- merge(selected_viruses, species_names, by='species', all.x=T)
 colnames(selected_viruses)[c(1, 65)] <- c('Host_species', 'Host_strain_present_in_mothers_and_infants')
+
 ##############################
 # ANALYSIS
 ##############################
@@ -269,6 +270,9 @@ for (i in p_value_real$Host_SGB) {
 # calculating FDR of pairwise distances comparison between samples of related and unrelated individuals
 p_value_real$FDR <- p.adjust(p_value_real$p_value_adj, method = "BH")
 
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(p_value_real, '05.MANUSCRIPT/Supplementary_tables/BacStr_distances_comparison_pval_pperm_FDR.txt', sep='\t', quote=F, row.names=F)
+
 family_bacteria <- p_value_real
 family_bacteria$significance_level <- NA
 family_bacteria[family_bacteria$FDR > 0.05,]$significance_level <- 'ns'
@@ -294,9 +298,10 @@ selected_viruses[is.na(selected_viruses$Host_SGB),]$Host_easy_name <- NA
 # adding the smallest non-zero Kimura distance to all distances (to use logarithmic scale in the plot)
 plot_distances$vector4analysis <- plot_distances$vector4analysis + min(plot_distances[plot_distances$vector4analysis!=0,]$vector4analysis)
 # showing only those viruses that have more than 5 pair-wise distances for related samples
-plot_distances_select <- plot_distances[ plot_distances$bacterium_name %in% family_bacteria[family_bacteria$N_related_distances>5,]$Host_SGB,]
+#plot_distances_select <- plot_distances[ plot_distances$bacterium_name %in% family_bacteria[family_bacteria$N_related_distances>5,]$Host_SGB,]
+plot_distances_select <- plot_distances
 plot_distances_select$significance_level <- family_bacteria$significance_level[match(plot_distances_select$bacterium_name, family_bacteria$Host_SGB)]
-
+plot_distances_select[duplicated(plot_distances_select$bacterium_name),]$significance_level <- NA
 # color-coding the y-axis titles depending on statistical significance of the differnece:
 myPalette <- family_bacteria
 myPalette$color <- NA
@@ -305,8 +310,10 @@ myPalette[myPalette$FDR<=0.05,]$color <- 'black'
 myPalette <- myPalette[myPalette$Host_SGB %in% unique(plot_distances_select$bacterium_name),]
 
 # renaming contigs for easier perception:
+species_names$species <- paste0(species_names$species, '_', gsub('SGB','',species_names$Host_SGB))
+
 plot_distances_select$easy_name <- species_names$species[match(plot_distances_select$bacterium_name, species_names$Host_SGB)]
-plot_distances_select$easy_name <- paste0(plot_distances_select$bacterium_name, '_', plot_distances_select$easy_name)
+#plot_distances_select$easy_name <- paste0(plot_distances_select$bacterium_name, '_', plot_distances_select$easy_name)
 
 
 # all virus strains
@@ -363,22 +370,25 @@ pdf('./04.PLOTS/Infant_bacterium_strain_all_wilcox_less_final.pdf', width=15/2.5
 combined_plot
 dev.off()
 
+### save before removing NS ones:
+write.table(plot_distances_select, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/ALL_bacteria_distances_related_vs_unrelated.txt', sep='\t', quote=F, row.names=F)
+
 # those where distances are significantly different:
 
-myPalette <- myPalette[myPalette$FDR<0.05 & myPalette$N_related_distances_host >=7,]
+myPalette <- myPalette[myPalette$FDR<0.05,]
 
 plot_distances_select <- plot_distances_select[plot_distances_select$bacterium_name %in% myPalette$Host_SGB,]
 N_pairwise_distance <- N_pairwise_distance[N_pairwise_distance$Host_SGB %in% myPalette$Host_SGB,]
-N_pairwise_distance$species_names <- gsub('_',' ',species_names$species[match(N_pairwise_distance$Host_SGB, species_names$Host_SGB)])
+N_pairwise_distance$species_names <- sub("^(.*?)_", "\\1 ", species_names$species[match(N_pairwise_distance$Host_SGB, species_names$Host_SGB)])
 
 species_order <- species_names[species_names$Host_SGB %in% N_pairwise_distance$Host_SGB,c("Host_SGB", "species")]
 species_order <- species_order[order(species_order$species),]
-species_order$ord <- sprintf("%02i", 24:1)
-species_order$species <- gsub('_', ' ', species_order$species)
+species_order$ord <- sprintf("%02i", 26:1)
+species_order$species <- sub('_', ' ', species_order$species)
 
 N_pairwise_distance$ord <- species_order$ord[match(N_pairwise_distance$Host_SGB, species_order$Host_SGB)]
 
-plot_distances_select$species_names <- gsub('_', ' ', species_names$species[match(plot_distances_select$bacterium_name, species_names$Host_SGB)])
+plot_distances_select$species_names <- sub('_', ' ', plot_distances_select$easy_name)
 plot_distances_select$ord <- species_order$ord[match(plot_distances_select$bacterium_name, species_order$Host_SGB)]
 
 
@@ -440,3 +450,8 @@ write.table(plot_distances, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Bacterium_dis
 write.table(family_bacteria, '02.CLEAN_DATA/List_bacteria_results_checking_transmission.txt', sep='\t', quote=F, row.names = F)
 write.table(species_names, '02.CLEAN_DATA/List_bacterial_strains_reconstructed_and_tested.txt', sep='\t', quote=F, row.names=F)
 write.table(selected_viruses, '02.CLEAN_DATA/List_viruses_selected_transmission_metadata_with_host.txt', sep='\t', quote=F, row.names = F)
+
+##### FOR VISUALIZATION #####
+write.table(plot_distances_select, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig4C_Bacterium_distances_related_vs_unrelated.txt', sep='\t', row.names = F)
+write.table(N_pairwise_distance, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig4C_N_pairwise_distance_related_vs_unrelated.txt', sep='\t', row.names = F)
+
