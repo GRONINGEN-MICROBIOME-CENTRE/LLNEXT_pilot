@@ -3,8 +3,6 @@ setwd('~/Desktop/Projects_2022/NEXT_pilot_FUP/')
 #############################################################
 # Here we explore the bacterial species-level stability
 # of infant and maternal gut 
-
-
 #############################################################
 
 ##############################
@@ -214,6 +212,27 @@ ggplot(bacstability_M1_abundance_stat[bacstability_M1_abundance_stat$Condition!=
          alpha=guide_legend(nrow=2,byrow=TRUE, title.position = 'top'))
 dev.off()
 
+row.names(MGS_metadata) <- MGS_metadata$Short_sample_ID_bact
+bacstability_M1_test <- merge(bacstability_M1_test, MGS_metadata, by='row.names')
+bacstability_M1_test$infant_ffq_feeding_mode_complex <- factor(bacstability_M1_test$infant_ffq_feeding_mode_complex,
+                                                               levels=c("BF", "MF", "FF"), ordered=T)
+# feeding mode is associated with % of bacterial species retained from M1: 
+pdf('./04.PLOTS/BacSp_retained_from_M1_feeding_mode.pdf', width=8/2.54, height=10/2.54)
+ggplot(bacstability_M1_test[!is.na(bacstability_M1_test$infant_ffq_feeding_mode_complex),], 
+       aes(Timepoint, perc_from_M1_retained, fill=infant_ffq_feeding_mode_complex)) + 
+  geom_boxplot(alpha=0.2, outlier.shape = NA) + 
+  geom_sina(aes(color=infant_ffq_feeding_mode_complex),size=0.5) + 
+  labs(x="Timepoint", y="% bacterial species retained from M1", fill='Feeding mode', color='Feeding mode') + 
+  theme_bw() + 
+  theme(axis.title =element_text(size=9,face="bold"),
+        legend.position = "bottom",
+        legend.title = element_text(size=8,face="bold"),
+        legend.text = element_text(size=7)) + 
+  scale_fill_manual(values = c("#2B2A4C", "#B31312", "#17594A")) +
+  scale_color_manual(values = c("#2B2A4C", "#B31312", "#17594A")) + 
+  guides(fill=guide_legend(nrow=1,byrow=TRUE, title.position = 'top', title.hjust = 0.5))
+dev.off()
+
 
 ######## will not be used probably ########
 stability <- as.data.frame(matrix(NA, nrow=length( unique(MGS_metadata$Individual_ID) ), ncol=6))
@@ -315,13 +334,13 @@ dev.off()
 
 ## Personal microbiome fractions
 
-p_bac_frac_infants <- personal_biome_fraction(MGS_metadata[MGS_metadata$Type=='Infant',], species_infants, 'Short_sample_ID_bact')
+p_bac_frac_infants <- personal_biome_fraction(MGS_metadata[MGS_metadata$Type=='Infant' & MGS_metadata$N_timepoints > 2,], species_infants, 'Short_sample_ID_bact')
 
 PPB_bac_freq_infants <- as.data.frame(table(unlist(unname( p_bac_frac_infants[["PPB_bacteria"]] ))))
 
 p_bac_frac_infants_individual <- p_bac_frac_infants[["personal_biome_fractions"]]
 p_bac_frac_infants_individual$Infant <- row.names(p_bac_frac_infants_individual)
-p_bac_frac_infants_individual <- melt(p_bac_frac_infants_individual[,c('PPB', 'TDB', 'Singletons', 'Infant')], id.vars = 'Infant')
+p_bac_frac_infants_individual <- melt(p_bac_frac_infants_individual[,c('PPB', 'TDB', 'Infant')], id.vars = 'Infant')
 p_bac_frac_infants_individual_df <- p_bac_frac_infants_individual[p_bac_frac_infants_individual$variable=='PPB',]
 p_bac_frac_infants_individual_df <- p_bac_frac_infants_individual_df[order(p_bac_frac_infants_individual_df$value,decreasing = T),]
 p_bac_frac_infants_individual$Infant <- factor(p_bac_frac_infants_individual$Infant, levels=p_bac_frac_infants_individual_df$Infant, ordered=T)
@@ -359,7 +378,7 @@ ggplot(p_bac_frac_infants_per_sample_ab, aes(Sample, value, fill=variable)) +
   labs(fill='Fraction') +
   facet_grid(~Infant, space = "free_x", scales = "free_x") +
   theme_bw() + 
-  scale_fill_manual(values=Monet[3:5], labels=c('PPB', 'TDB', 'Singletons')) +
+  scale_fill_manual(values=Monet[3:5], labels=c('PPB', 'TDB')) +
   theme(axis.text.y=element_text(size=12), 
         axis.text.x=element_blank(),
         axis.ticks.x = element_blank(),
@@ -384,7 +403,7 @@ ggplot(plot_bac_frac_infants_per_sample_N, aes(Sample, value, fill=variable)) +
   labs(fill='Fraction') +
   facet_grid(~Infant, space = "free_x", scales = "free_x") +
   theme_bw() + 
-  scale_fill_manual(values=Monet[3:5], labels=c('PPB', 'TDB', 'Singletons')) +
+  scale_fill_manual(values=Monet[3:5], labels=c('PPB', 'TDB')) +
   theme(axis.text.y=element_text(size=12), 
         axis.text.x=element_blank(),
         axis.ticks.x = element_blank(),
@@ -401,9 +420,9 @@ p_bac_frac_infants_per_sample <- merge(p_bac_frac_infants_per_sample, as.data.fr
 p_bac_frac_infants_per_sample$Row.names <- NULL
 row.names(p_bac_frac_infants_per_sample) <- p_bac_frac_infants_per_sample$Row.names
 p_bac_frac_infants_per_sample$Row.names <- NULL
-colnames(p_bac_frac_infants_per_sample)[c(8,9)] <- c('bacterial_richness', 'Total_space')
-p_bac_frac_infants_per_sample_percs <- cbind(p_bac_frac_infants_per_sample[,c("N_PPB", "N_TDB", "N_Singletons")]/p_bac_frac_infants_per_sample[,"bacterial_richness"],
-                                             p_bac_frac_infants_per_sample[,c("ab_PPB", "ab_TDB", "ab_Singletons")]/p_bac_frac_infants_per_sample[,"Total_space"])
+colnames(p_bac_frac_infants_per_sample)[c(6,7)] <- c('bacterial_richness', 'Total_space')
+p_bac_frac_infants_per_sample_percs <- cbind(p_bac_frac_infants_per_sample[,c("N_PPB", "N_TDB")]/p_bac_frac_infants_per_sample[,"bacterial_richness"],
+                                             p_bac_frac_infants_per_sample[,c("ab_PPB", "ab_TDB")]/p_bac_frac_infants_per_sample[,"Total_space"])
 
 p_bac_frac_infants_per_sample_percs <- p_bac_frac_infants_per_sample_percs*100
 p_bac_frac_infants_per_sample_percs_stat <- summary_stat_bootstrap(p_bac_frac_infants_per_sample_percs, colnames(p_bac_frac_infants_per_sample_percs))
@@ -414,20 +433,16 @@ p_bac_frac_infants_per_sample_percs_melt$Individual_ID <- MGS_metadata$Individua
 # are the fractions different in size?
 model1 <- lmer(value ~ variable + (1|Individual_ID),
                data = p_bac_frac_infants_per_sample_percs_melt[grep('N_', p_bac_frac_infants_per_sample_percs_melt$variable),], REML = F)
-summary(model1)
+summary(model1)$coefficients
+write.table(as.data.frame(summary(model1)$coefficients)[,1:5], "05.MANUSCRIPT/Supplementary_tables/MM_N_bacsp_fractions_sizes_comparison_infant.txt", sep='\t', quote=F)
 
-# which is larger?
-anova1 <- aov(value ~ variable,
-              data = p_bac_frac_infants_per_sample_percs_melt[grep('N_', p_bac_frac_infants_per_sample_percs_melt$variable),])
-TukeyHSD(anova1)
 boxplot(data=p_bac_frac_infants_per_sample_percs_melt[grep('N_', p_bac_frac_infants_per_sample_percs_melt$variable),], value ~ variable)
 # are the fractions different in abundance?
 model2 <- lmer(value ~ variable + (1|Individual_ID),
                data = p_bac_frac_infants_per_sample_percs_melt[grep('ab_', p_bac_frac_infants_per_sample_percs_melt$variable),], REML = F)
-summary(model2)
-anova2 <- aov(value ~ variable,
-              data = p_bac_frac_infants_per_sample_percs_melt[grep('ab_', p_bac_frac_infants_per_sample_percs_melt$variable),])
-TukeyHSD(anova2)
+summary(model2)$coefficients
+write.table(as.data.frame(summary(model2)$coefficients)[,1:5], "05.MANUSCRIPT/Supplementary_tables/MM_bacsp_fractions_abundance_comparison_infant.txt", sep='\t', quote=F)
+
 boxplot(data=p_bac_frac_infants_per_sample_percs_melt[grep('ab_', p_bac_frac_infants_per_sample_percs_melt$variable),], value ~ variable)
 ### phenotypes: 
 infant_fractions_time <- mixed_models_taxa(MGS_metadata, 
@@ -448,6 +463,13 @@ infant_fractions_withtime <- mixed_models_taxa(MGS_metadata,
 infant_fractions_withtime$FDR <- unlist(lapply(c("N_", "ab_"), function(i) {
   p.adjust(infant_fractions_withtime[grep(i,infant_fractions_withtime$Bug), "P"], method = "BH")
 })) # no significant associations with phenotypes
+
+
+# taxa: 
+## host taxonomy of PPB:
+PPB_bac_freq_infants <- as.data.frame(table(unlist(unname( p_bac_frac_infants[["PPB_bacteria"]] )))) 
+PPB_bac_freq_infants$perc_infants <- PPB_bac_freq_infants$Freq/32
+write.table(PPB_bac_freq_infants, "03a.RESULTS/PPB_species_infants_frequency.txt", sep='\t', quote=F, row.names=F)
 
 ### Mother Bacteria ###
 bacstability_P3 <- stability_initial(MGS_metadata[MGS_metadata$Type=='Mother',], species_mothers, Mother_timepoints, 'Short_sample_ID_bact', 'Richness')
@@ -529,15 +551,14 @@ heatmap.2(as.matrix(bacpresence_from_P3_prevalent), col=as.vector(Okeeffe1_conti
 )
 dev.off()
 
-p_bac_frac_mothers <- personal_biome_fraction(MGS_metadata[MGS_metadata$Type=='Mother',], species_mothers, 'Short_sample_ID_bact')
+p_bac_frac_mothers <- personal_biome_fraction(MGS_metadata[MGS_metadata$Type=='Mother' & MGS_metadata$N_timepoints > 2,], species_mothers, 'Short_sample_ID_bact')
 
 PPB_bac_freq_mothers <- as.data.frame(table(unlist(unname( p_bac_frac_mothers[["PPB_bacteria"]] ))))
 
 p_bac_frac_mothers_individual <- p_bac_frac_mothers[["personal_biome_fractions"]]
-# since it is impossible to judge about the stability in 2 timepoints
-p_bac_frac_mothers_individual <- p_bac_frac_mothers_individual[p_bac_frac_mothers_individual$N_timepoints > 2,]
+
 p_bac_frac_mothers_individual$Mother <- row.names(p_bac_frac_mothers_individual)
-p_bac_frac_mothers_individual <- melt(p_bac_frac_mothers_individual[,c('PPB', 'TDB', 'Singletons', 'Mother')], id.vars = 'Mother')
+p_bac_frac_mothers_individual <- melt(p_bac_frac_mothers_individual[,c('PPB', 'TDB', 'Mother')], id.vars = 'Mother')
 p_bac_frac_mothers_individual_df <- p_bac_frac_mothers_individual[p_bac_frac_mothers_individual$variable=='PPB',]
 p_bac_frac_mothers_individual_df <- p_bac_frac_mothers_individual_df[order(p_bac_frac_mothers_individual_df$value,decreasing = T),]
 p_bac_frac_mothers_individual$Mother <- factor(p_bac_frac_mothers_individual$Mother, levels=p_bac_frac_mothers_individual_df$Mother, ordered=T)
@@ -563,8 +584,6 @@ p_bac_frac_mothers_per_sample$Sample <- row.names(p_bac_frac_mothers_per_sample)
 
 p_bac_frac_mothers_per_sample_ab <- melt(p_bac_frac_mothers_per_sample[,c(colnames(p_bac_frac_mothers_per_sample)[grep('ab_', colnames(p_bac_frac_mothers_per_sample))], "Sample")], id='Sample')
 p_bac_frac_mothers_per_sample_ab$Mother <- MGS_metadata$Individual_ID[match(p_bac_frac_mothers_per_sample_ab$Sample, MGS_metadata$Short_sample_ID_bact)] 
-# excluding those that have only 2 timepoints: 
-p_bac_frac_mothers_per_sample_ab <- p_bac_frac_mothers_per_sample_ab[p_bac_frac_mothers_per_sample_ab$Mother %in% p_bac_frac_mothers_individual$Mother,]
 p_bac_frac_mothers_per_sample_ab$Timepoint <- MGS_metadata$Timepoint[match(p_bac_frac_mothers_per_sample_ab$Sample, MGS_metadata$Short_sample_ID_bact)]
 p_bac_frac_mothers_per_sample_ab$Mother <- factor(p_bac_frac_mothers_per_sample_ab$Mother, levels=p_bac_frac_mothers_individual_df$Mother, ordered = T)
 p_bac_frac_mothers_per_sample_ab$Timepoint <- factor(p_bac_frac_mothers_per_sample_ab$Timepoint, levels=Mother_timepoints, ordered=T)
@@ -590,8 +609,6 @@ dev.off()
 
 plot_bac_frac_mothers_per_sample_N <- melt(p_bac_frac_mothers_per_sample[,c(colnames(p_bac_frac_mothers_per_sample)[grep('N_', colnames(p_bac_frac_mothers_per_sample))], "Sample")], id='Sample')
 plot_bac_frac_mothers_per_sample_N$Mother <- MGS_metadata$Individual_ID[match(plot_bac_frac_mothers_per_sample_N$Sample, MGS_metadata$Short_sample_ID_bact)] 
-# excluding those that have only 2 timepoints: 
-plot_bac_frac_mothers_per_sample_N <- plot_bac_frac_mothers_per_sample_N[plot_bac_frac_mothers_per_sample_N$Mother %in% p_bac_frac_mothers_individual$Mother,]
 plot_bac_frac_mothers_per_sample_N$Timepoint <- MGS_metadata$Timepoint[match(plot_bac_frac_mothers_per_sample_N$Sample, MGS_metadata$Short_sample_ID_bact)]
 plot_bac_frac_mothers_per_sample_N$Mother <- factor(plot_bac_frac_mothers_per_sample_N$Mother, levels=p_bac_frac_mothers_individual_df$Mother, ordered = T)
 plot_bac_frac_mothers_per_sample_N$Timepoint <- factor(plot_bac_frac_mothers_per_sample_N$Timepoint, levels=Mother_timepoints, ordered=T)
@@ -614,6 +631,43 @@ ggplot(plot_bac_frac_mothers_per_sample_N, aes(Sample, value, fill=variable)) +
         panel.spacing = unit(0.1, "lines"))
 dev.off()
 
+## FRACTION STAT: 
+p_bac_frac_mothers_per_sample <- merge(p_bac_frac_mothers_per_sample, as.data.frame(colSums(species_mothers > 0)), by="row.names")
+row.names(p_bac_frac_mothers_per_sample) <- p_bac_frac_mothers_per_sample$Row.names
+p_bac_frac_mothers_per_sample <- merge(p_bac_frac_mothers_per_sample, as.data.frame(colSums(species_mothers)), by="row.names")
+p_bac_frac_mothers_per_sample$Row.names <- NULL
+row.names(p_bac_frac_mothers_per_sample) <- p_bac_frac_mothers_per_sample$Row.names
+p_bac_frac_mothers_per_sample$Row.names <- NULL
+colnames(p_bac_frac_mothers_per_sample)[c(6,7)] <- c('bacterial_richness', 'Total_space')
+p_bac_frac_mothers_per_sample_percs <- cbind(p_bac_frac_mothers_per_sample[,c("N_PPB", "N_TDB")]/p_bac_frac_mothers_per_sample[,"bacterial_richness"],
+                                             p_bac_frac_mothers_per_sample[,c("ab_PPB", "ab_TDB")]/p_bac_frac_mothers_per_sample[,"Total_space"])
+
+p_bac_frac_mothers_per_sample_percs <- p_bac_frac_mothers_per_sample_percs*100
+p_bac_frac_mothers_per_sample_percs_stat <- summary_stat_bootstrap(p_bac_frac_mothers_per_sample_percs, colnames(p_bac_frac_mothers_per_sample_percs))
+p_bac_frac_mothers_per_sample_percs$Short_sample_ID_bact <- row.names(p_bac_frac_mothers_per_sample_percs)
+p_bac_frac_mothers_per_sample_percs_melt <- melt(p_bac_frac_mothers_per_sample_percs)
+p_bac_frac_mothers_per_sample_percs_melt$Individual_ID <- MGS_metadata$Individual_ID[match(p_bac_frac_mothers_per_sample_percs_melt$Short_sample_ID_bact, MGS_metadata$Short_sample_ID_bact)]
+
+
+# are the fractions different in size?
+model3 <- lmer(value ~ variable + (1|Individual_ID),
+               data = p_bac_frac_mothers_per_sample_percs_melt[grep('N_', p_bac_frac_mothers_per_sample_percs_melt$variable),], REML = F)
+summary(model3)$coefficients
+###### FOR SUPPLEMENTARY #####
+write.table(as.data.frame(summary(model3)$coefficients)[,1:5], "05.MANUSCRIPT/Supplementary_tables/MM_N_bacsp_fractions_size_comparison_mother.txt", sep='\t', quote=F)
+
+boxplot(data=p_bac_frac_mothers_per_sample_percs_melt[grep('N_', p_bac_frac_mothers_per_sample_percs_melt$variable),], value ~ variable)
+# are the fractions different in abundance?
+model4 <- lmer(value ~ variable + (1|Individual_ID),
+               data = p_bac_frac_mothers_per_sample_percs_melt[grep('ab_', p_bac_frac_mothers_per_sample_percs_melt$variable),], REML = F)
+summary(model4)$coefficients
+###### FOR SUPPLEMENTARY #####
+write.table(as.data.frame(summary(model4)$coefficients)[,1:5], "05.MANUSCRIPT/Supplementary_tables/MM_bacsp_fractions_abundance_comparison_mother.txt", sep='\t', quote=F)
+
+
+boxplot(data=p_bac_frac_infants_per_sample_percs_melt[grep('ab_', p_bac_frac_infants_per_sample_percs_melt$variable),], value ~ variable)
+
+
 ###### OUTPUT #####
 write.table(bacstability_M1, '03a.RESULTS/N_retained_BacSp_from_M1_infants.txt', sep='\t', quote=F)
 write.table(bacstability_M1_abundance, '03a.RESULTS/Abundance_retained_BacSp_from_M1_infants.txt', sep='\t', quote=F)
@@ -626,3 +680,22 @@ write.table(bacstability_P3_abundance, '03a.RESULTS/Abundance_retained_BacSp_fro
 write.table(bacpresence_from_P3, '03a.RESULTS/BacSp_retained_from_P3_over_time_mothers.txt', sep='\t', quote=F)
 write.table(PPB_bac_freq_mothers, '03a.RESULTS/BacSp_members_of_PPB_mothers_freq.txt', sep='\t', quote=F)
 write.table(p_bac_frac_mothers_per_sample, '03a.RESULTS/Fractions_of_personal_maternal_bacteriome_N_and_abundance.txt', sep='\t', quote=F)
+
+###### RESULTS ######
+write.table(bacstability_M1_time, '03a.RESULTS/BacSp_stability_vs_time_metrics_phenos_mixed_models.txt', sep='\t', row.names = F, quote = F)
+write.table(bacstability_M1_withtime, '03a.RESULTS/BacSp_stability_metrics_over_time_phenos_mixed_models.txt', sep='\t', row.names = F, quote = F)
+
+##### FOR VISUALIZATION #####
+write.table(bacstability_M1_stat, "02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig1B_N_retained_BacSp_from_M1_infants_stat.txt", sep = '\t', quote=F)
+write.table(bacstability_M1_abundance_stat, "02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig1C_RA_retained_BacSp_from_M1_infants_stat.txt", sep = '\t', quote=F)
+write.table(bacstability_P3_stat, "02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig1D_N_retained_BacSp_from_P3_mothers_stat.txt", sep = '\t', quote=F)
+write.table(bacstability_P3_abundance_stat, "02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig1E_RA_retained_BacSp_from_P3_mothers_stat.txt", sep = '\t', quote=F)
+write.table(plot_bac_frac_infants_per_sample_N, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig1F_N_fractions_personal_microbiome_infants.txt', sep='\t', quote=F, row.names = F)
+write.table(p_bac_frac_infants_per_sample_ab, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig1G_RA_fractions_personal_microbiome_infants.txt', sep='\t', quote=F, row.names = F)
+write.table(p_bac_frac_infants_individual_df, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig1FG_microbiome_sorting_df_infants.txt', sep='\t', quote=F, row.names = F)
+
+write.table(plot_bac_frac_mothers_per_sample_N, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig2E_N_fractions_personal_microbiome_mothers.txt', sep='\t', quote=F, row.names = F)
+write.table(p_bac_frac_mothers_per_sample_ab, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig2F_RA_fractions_personal_microbiome_mothers.txt', sep='\t', quote=F, row.names = F)
+write.table(p_bac_frac_mothers_individual_df, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig2EF_microbiome_sorting_df_mothers.txt', sep='\t', quote=F, row.names = F)
+
+write.table(TDB_bac_freq_infants, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/tmp.txt', sep='\t', row.names = F, quote=F)
