@@ -45,7 +45,7 @@ wrapper_melt <- function(df_average, taxa, timepoints, type){
 ##############################
 # Loading libraries
 ##############################
-
+library(MetBrewer)
 ##############################
 # Input data
 ##############################
