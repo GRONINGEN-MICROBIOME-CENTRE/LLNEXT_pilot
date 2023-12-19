@@ -105,7 +105,7 @@ for (seq_id in c('MGYG000132487_6_RagTag')) {
 
   for (sample_id in MGS_metadata[MGS_metadata$B_bifidum_positive=="YES",]$NG_ID) {
     
-    tab <- read.table(paste0('~/Desktop/Projects_2022/NEXT_pilot_FUP/03.SCRIPTS/NEXT_pilot_FUP_bf_origin/L34922_LS1/MGS_alignments/', sample_id, '.target.cov.txt'), sep='\t', header=F, fill=T)
+    tab <- read.table(paste0('~/Desktop/Projects_2022/NEXT_pilot_FUP/03.SCRIPTS/NEXT_pilot_FUP_bf_origin/L34922_LS1.nosync//MGS_alignments/', sample_id, '.target.cov.txt'), sep='\t', header=F, fill=T)
     
     COVERAGE <- rep(0, len)
     COVERAGE[tab$V2] <- tab$V4
@@ -129,7 +129,7 @@ for (seq_id in c('MGYG000132487_6_RagTag')) {
   
   for (sample_id in VLP_metadata[VLP_metadata$L34922_LS1_positive=="YES",]$NG_ID) {
     
-    tab <- read.table(paste0('~/Desktop/Projects_2022/NEXT_pilot_FUP/03.SCRIPTS/NEXT_pilot_FUP_bf_origin/L34922_LS1/VLP_alignments/', sample_id, '.target.cov.txt'), sep='\t', header=F, fill=T)
+    tab <- read.table(paste0('~/Desktop/Projects_2022/NEXT_pilot_FUP/03.SCRIPTS/NEXT_pilot_FUP_bf_origin/L34922_LS1.nosync//VLP_alignments/', sample_id, '.target.cov.txt'), sep='\t', header=F, fill=T)
     
     COVERAGE <- rep(0, len)
     COVERAGE[tab$V2] <- tab$V4
@@ -240,7 +240,7 @@ for (seq_id in c('MGYG000132487_6_RagTag')) {
   
   for (sample_id in MGS_metadata[MGS_metadata$B_bifidum_positive=="YES",]$NG_ID) {
     
-    tab <- read.table(paste0('~/Desktop/Projects_2022/NEXT_pilot_FUP/03.SCRIPTS/NEXT_pilot_FUP_bf_origin/L34922_LS1/MGS_alignments/', sample_id, '.target.cov.txt'), sep='\t', header=F, fill=T)
+    tab <- read.table(paste0('~/Desktop/Projects_2022/NEXT_pilot_FUP/03.SCRIPTS/NEXT_pilot_FUP_bf_origin/L34922_LS1.nosync//MGS_alignments/', sample_id, '.target.cov.txt'), sep='\t', header=F, fill=T)
     
     prophage_absence_MGS <- merge(prophage_absence_MGS, tab[,c('V2', 'V4')], by='V2', all.x=T)
     
@@ -253,7 +253,7 @@ for (seq_id in c('MGYG000132487_6_RagTag')) {
   
   for (sample_id in VLP_metadata[VLP_metadata$L34922_LS1_positive=="YES",]$NG_ID) {
     
-    tab <- read.table(paste0('~/Desktop/Projects_2022/NEXT_pilot_FUP/03.SCRIPTS/NEXT_pilot_FUP_bf_origin/L34922_LS1/VLP_alignments/', sample_id, '.target.cov.txt'), sep='\t', header=F, fill=T)
+    tab <- read.table(paste0('~/Desktop/Projects_2022/NEXT_pilot_FUP/03.SCRIPTS/NEXT_pilot_FUP_bf_origin/L34922_LS1.nosync//VLP_alignments/', sample_id, '.target.cov.txt'), sep='\t', header=F, fill=T)
     
     prophage_absence_VLP <- merge(prophage_absence_VLP, tab[,c('V2', 'V4')], by='V2', all.x=T)
     
