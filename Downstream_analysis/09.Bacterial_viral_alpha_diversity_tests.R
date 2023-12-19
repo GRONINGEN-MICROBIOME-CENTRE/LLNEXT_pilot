@@ -71,6 +71,7 @@ library(reshape2)
 library(ggplot2)
 library(ggforce)
 library(ggsignif)
+library(tidyverse)
 ##############################
 # Input data
 ##############################
@@ -101,16 +102,10 @@ type_mod1  = lmer(viral_alpha_diversity ~ Type + DNA_CONC + Clean_reads + (1|NEX
 BIC(type_mod0, type_mod1)
 exactLRT(type_mod1,type_mod0)
 summary(type_mod1) #Type 2.525e+00  3.517e-01 6.182e+01   7.178 1.07e-09 ***
+as.data.frame(summary(type_mod1)$coefficients)[,1:5]
 
-
-# dependent on type & time?
-mod0 <- lm(viral_alpha_diversity ~ Timepoint_continuous + DNA_CONC + Clean_reads, data = VLP_metadata)
-mod1  = lmer(viral_alpha_diversity ~ Type + Timepoint_continuous + DNA_CONC + Clean_reads + (1|NEXT_ID), REML = F, data = VLP_metadata)
-BIC(mod0, mod1)
-exactLRT(mod1,mod0)
-summary(mod1) #Timepoint_continuous 1.132e-01  3.393e-02 1.768e+02   3.337 0.001033 **  
-as.data.frame(summary(mod1)$coefficients)[,1:5]
-
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(as.data.frame(summary(type_mod1)$coefficients)[,1:5], '05.MANUSCRIPT/Supplementary_tables/MM_vOTUs_alpha_diversity_Type.txt', sep='\t', quote=F)
 
 # dependant on time in babies? (switching to the exact ages for a higher precision)
 btmod0 <- lm(viral_alpha_diversity ~ Age_days + DNA_CONC + Clean_reads, data = VLP_metadata[VLP_metadata$Type=="Infant",])
@@ -119,7 +114,9 @@ BIC(btmod0, btmod1)
 exactLRT(btmod1,btmod0)
 summary(btmod0) 
 summary(btmod1) #Age_days     4.733e-03  1.284e-03  8.112e+01   3.687 0.000408 ***
-
+as.data.frame(summary(btmod1)$coefficients)[,1:5]
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(as.data.frame(summary(btmod1)$coefficients)[,1:5], '05.MANUSCRIPT/Supplementary_tables/MM_vOTUs_alpha_diversity_Infant_over_time.txt', sep='\t', quote=F)
 
 # dependant on time in mothers? NS
 mtmod0 <- lm(viral_alpha_diversity ~ Timepoint_continuous+ DNA_CONC + Clean_reads, data = VLP_metadata[VLP_metadata$Type=="Mother",])
@@ -127,7 +124,9 @@ mtmod1  = lmer(viral_alpha_diversity ~ Timepoint_continuous+ DNA_CONC + Clean_re
 BIC(mtmod0, mtmod1)
 exactLRT(mtmod1,mtmod0)
 summary(mtmod1) #Timepoint_continuous 4.017e-04  6.795e-02 9.027e+01   0.006   0.9953   
-
+as.data.frame(summary(mtmod1)$coefficients)[,1:5] 
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(as.data.frame(summary(mtmod1)$coefficients)[,1:5], '05.MANUSCRIPT/Supplementary_tables/MM_vOTUs_alpha_diversity_Mother_over_time.txt', sep='\t', quote=F)
 
 # alpha-diversity plot virome
 pdf('./04.PLOTS/Virome_diversity_plot.pdf', width=12/2.54, height=9/2.54)
@@ -163,10 +162,16 @@ Cohens_d = (mean_m - mean_i) / s_p
 vOTUs_diversity_phenos <- mixed_models_taxa(VLP_metadata[VLP_metadata$Type=="Infant",grep("viral_alpha_diversity", colnames(VLP_metadata), invert=T)], 
                                             "Short_sample_ID",
                                             VLP_metadata[VLP_metadata$Type=="Infant","viral_alpha_diversity",drop=F],
-                                            c("infant_place_delivery", "infant_ffq_feeding_mode_complex", "infant_ever_never_breastfed"), 
+                                            c("infant_place_delivery", 
+                                              "infant_ever_never_breastfed"
+                                              ), 
                                             'time_as_covariate')
 
+virdiv_corr_for_bacdiv <- lmer(viral_alpha_diversity ~ DNA_CONC + Clean_reads + infant_mode_delivery + Age_months + infant_ever_never_breastfed + bacterial_alpha_diversity +(1|Individual_ID),REML=F, data = VLP_metadata[VLP_metadata$Type=="Infant",])
 
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(vOTUs_diversity_phenos, '05.MANUSCRIPT/Supplementary_tables/MM_vOTUs_alpha_diversity_Infant_phenos_over_time.txt', sep='\t', quote=F)
+write.table(as.data.frame(summary(virdiv_corr_for_bacdiv)$coefficients)[,1:5], '05.MANUSCRIPT/Supplementary_tables/MM_vOTUs_alpha_diversity_feeding_mode_corrected_for_bac_diversity_over_time.txt', sep='\t', quote=F)
 
 pdf('./04.PLOTS/Virome_diversity_feeding_plot.pdf', width=12/2.54, height=9/2.54)
 
@@ -198,13 +203,8 @@ BIC(type_mod0_bac, type_mod1_bac)
 exactLRT(type_mod1_bac,type_mod0_bac)
 summary(type_mod1_bac) # Type 1.767321e+00 9.933489e-02  76.76975 17.791543 5.861632e-29
 as.data.frame(summary(type_mod1_bac)$coefficients)[,1:5]
-
-# dependent on type & time?
-mod0_bac <- lm(bacterial_alpha_diversity ~ Timepoint_continuous + DNA_CONC + Clean_reads, data = MGS_metadata)
-mod1_bac  = lmer(bacterial_alpha_diversity ~ Type + Timepoint_continuous + DNA_CONC + Clean_reads + (1|NEXT_ID), REML = F, data = MGS_metadata)
-BIC(mod0_bac, mod1_bac)
-exactLRT(mod1_bac,mod0_bac)
-summary(mod1_bac) #Timepoint_continuous 5.719e-02  7.041e-03  2.759e+02   8.122 1.54e-14 ***
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(as.data.frame(summary(type_mod1_bac)$coefficients)[,1:5], '05.MANUSCRIPT/Supplementary_tables/MM_bacsp_alpha_diversity_Type.txt', sep='\t', quote=F)
 
 # dependant on time in babies?
 btmod0_bac <- lm(bacterial_alpha_diversity ~ Age_days + DNA_CONC + Clean_reads, data = MGS_metadata[MGS_metadata$Type=="Infant",])
@@ -212,6 +212,8 @@ btmod1_bac  = lmer(bacterial_alpha_diversity ~ Age_days + DNA_CONC + Clean_reads
 BIC(btmod0_bac, btmod1_bac)
 exactLRT(btmod1_bac,btmod0_bac)
 summary(btmod1_bac) #Age_days     2.707e-03  3.521e-04  1.552e+02   7.689 1.59e-12 ***
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(as.data.frame(summary(btmod1_bac)$coefficients)[,1:5], '05.MANUSCRIPT/Supplementary_tables/MM_bacsp_alpha_diversity_Infant_over_time.txt', sep='\t', quote=F)
 
 
 # dependant on time in mothers? NS
@@ -220,7 +222,8 @@ mtmod1_bac  = lmer(bacterial_alpha_diversity ~ Timepoint_continuous+ DNA_CONC + 
 BIC(mtmod0_bac, mtmod1_bac)
 exactLRT(mtmod1_bac,mtmod0_bac)
 summary(mtmod1_bac) #Timepoint_continuous 1.125e-02  1.001e-02  1.204e+02   1.124   0.2634   
-
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(as.data.frame(summary(mtmod1_bac)$coefficients)[,1:5], '05.MANUSCRIPT/Supplementary_tables/MM_bacsp_alpha_diversity_Mother_over_time.txt', sep='\t', quote=F)
 
 # alpha-diversity plot bacteriome
 pdf('./04.PLOTS/Bacteriome_diversity_plot.pdf', width=12/2.54, height=9/2.54)
