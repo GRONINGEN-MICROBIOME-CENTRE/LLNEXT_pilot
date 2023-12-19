@@ -100,6 +100,8 @@ vOTUs_mothers <- vOTUs_mothers[rowSums(vOTUs_mothers)!=0,]
 Demuth <- met.brewer("Demuth")
 Monet <- met.brewer('Monet')
 
+host_assignment <- read.table('02.CLEAN_DATA/Host_prediction_to_genus_m90_refined_taxonomy_no_generalists.txt', sep='\t', header=T)
+host_assignment_species <- read.table('02.CLEAN_DATA/Host_prediction_to_genome_m90_refined_taxonomy_no_generalists.txt', sep='\t', header=T)
 ##############################
 # ANALYSIS
 ##############################
@@ -238,7 +240,7 @@ PPB_vir_freq_infants <- as.data.frame(table(unlist(unname( p_vir_frac_infants[["
 
 p_vir_frac_infants_individual <- p_vir_frac_infants[["personal_biome_fractions"]]
 p_vir_frac_infants_individual$Infant <- row.names(p_vir_frac_infants_individual)
-p_vir_frac_infants_individual <- melt(p_vir_frac_infants_individual[,c('PPB', 'TDB', 'Singletons', 'Infant')], id.vars = 'Infant')
+p_vir_frac_infants_individual <- melt(p_vir_frac_infants_individual[,c('PPB', 'TDB', 'Infant')], id.vars = 'Infant')
 p_vir_frac_infants_individual_df <- p_vir_frac_infants_individual[p_vir_frac_infants_individual$variable=='PPB',]
 p_vir_frac_infants_individual_df <- p_vir_frac_infants_individual_df[order(p_vir_frac_infants_individual_df$value,decreasing = T),]
 p_vir_frac_infants_individual$Infant <- factor(p_vir_frac_infants_individual$Infant, levels=p_vir_frac_infants_individual_df$Infant, ordered=T)
@@ -317,9 +319,9 @@ p_vir_frac_infants_per_sample$viral_richness <- VLP_metadata$viral_richness[matc
 p_vir_frac_infants_per_sample <- merge(p_vir_frac_infants_per_sample, as.data.frame(colSums(RPKM_counts_VLP)), by="row.names")
 row.names(p_vir_frac_infants_per_sample) <- p_vir_frac_infants_per_sample$Row.names
 p_vir_frac_infants_per_sample$Row.names <- NULL
-colnames(p_vir_frac_infants_per_sample)[9] <- 'Total_space'
-p_vir_frac_infants_per_sample_percs <- cbind(p_vir_frac_infants_per_sample[,c("N_PPB", "N_TDB", "N_Singletons")]/p_vir_frac_infants_per_sample[,"viral_richness"],
-                                             p_vir_frac_infants_per_sample[,c("ab_PPB", "ab_TDB", "ab_Singletons")]/p_vir_frac_infants_per_sample[,"Total_space"])
+colnames(p_vir_frac_infants_per_sample)[7] <- 'Total_space'
+p_vir_frac_infants_per_sample_percs <- cbind(p_vir_frac_infants_per_sample[,c("N_PPB", "N_TDB")]/p_vir_frac_infants_per_sample[,"viral_richness"],
+                                             p_vir_frac_infants_per_sample[,c("ab_PPB", "ab_TDB")]/p_vir_frac_infants_per_sample[,"Total_space"])
 p_vir_frac_infants_per_sample_percs <- p_vir_frac_infants_per_sample_percs*100
 p_vir_frac_infants_per_sample_percs_stat <- summary_stat_bootstrap(p_vir_frac_infants_per_sample_percs, colnames(p_vir_frac_infants_per_sample_percs))
 
@@ -332,23 +334,15 @@ model1 <- lmer(value ~ variable + (1|Individual_ID),
                data = p_vir_frac_infants_per_sample_percs_melt[grep('N_', p_vir_frac_infants_per_sample_percs_melt$variable),], REML = F)
 summary(model1)
 
-# which is larger?
-anova1 <- aov(value ~ variable,
-                 data = p_vir_frac_infants_per_sample_percs_melt[grep('N_', p_vir_frac_infants_per_sample_percs_melt$variable),])
-TukeyHSD(anova1)
-
 # are the fractions different in abundance?
 model2 <- lmer(value ~ variable + (1|Individual_ID),
                data = p_vir_frac_infants_per_sample_percs_melt[grep('ab_', p_vir_frac_infants_per_sample_percs_melt$variable),], REML = F)
 summary(model2)
-anova2 <- aov(value ~ variable,
-              data = p_vir_frac_infants_per_sample_percs_melt[grep('ab_', p_vir_frac_infants_per_sample_percs_melt$variable),])
-TukeyHSD(anova2)
 
 ### phenotypes: 
 infant_fractions_time <- mixed_models_taxa(VLP_metadata, 
                   "Short_sample_ID", 
-                  p_vir_frac_infants_per_sample_percs[,-7], 
+                  p_vir_frac_infants_per_sample_percs[,-5], 
                   c("Age_months"), 
                   "dont_consider_time")
 infant_fractions_time$FDR <- unlist(lapply(c("N_", "ab_"), function(i) {
@@ -357,7 +351,7 @@ infant_fractions_time$FDR <- unlist(lapply(c("N_", "ab_"), function(i) {
 
 infant_fractions_withtime <- mixed_models_taxa(VLP_metadata, 
                                               "Short_sample_ID", 
-                                              p_vir_frac_infants_per_sample_percs[,-7], 
+                                              p_vir_frac_infants_per_sample_percs[,-5], 
                                               c("infant_place_delivery", 
                                                 "infant_ffq_feeding_mode_complex"), 
                                               "time_as_covariate")
@@ -384,6 +378,87 @@ ggplot(plot_ab_PPB, aes(Timepoint, ab_PPB, fill=infant_place_delivery)) +
         panel.spacing = unit(0.1, "lines")) + 
   guides(fill = guide_legend(title.position = "top"))
 dev.off()
+
+## host taxonomy of PPB:
+PPV_vir_freq_infants <- as.data.frame(table(unlist(unname( p_vir_frac_infants[["PPB_bacteria"]] )))) 
+sum(PPV_vir_freq_infants[PPB_vir_freq_infants$Freq==1,"Freq"]) #724
+sum(PPV_vir_freq_infants[PPB_vir_freq_infants$Freq==1,"Freq"])/sum(PPV_vir_freq_infants[,"Freq"]) 
+
+PPV_vir_freq_infants$Host.species <- host_assignment_species$Host.taxonomy.refined[match(PPV_vir_freq_infants$Var1, host_assignment_species$Virus)]
+length(PPV_vir_freq_infants[!is.na(PPV_vir_freq_infants$Host.species),]$Host.species)
+length(unique(PPV_vir_freq_infants[!is.na(PPV_vir_freq_infants$Host.species),]$Host.species))
+PPV_vir_freq_infants$Count <- 1
+PPV_vir_freq_infants$Genus <- gsub(';.*','',gsub('.*g__', '', PPV_vir_freq_infants$Host.species))
+
+infant_PPVs_freq <- aggregate(.~Host.species, PPV_vir_freq_infants[,c("Host.species", "Count")], 'sum')
+
+infant_PPVs_hostsp <- p_vir_frac_infants[["PPB_bacteria"]] 
+
+infant_PPVs_hostsp <- lapply(names(infant_PPVs_hostsp), function(x) {
+  infant_PPVs_hostsp[[x]] <- unique(host_assignment_species[host_assignment_species$Virus %in% infant_PPVs_hostsp[[x]], ]$Host.taxonomy.refined)
+  infant_PPVs_hostsp[[x]]
+})
+
+names(infant_PPVs_hostsp) <- names(p_vir_frac_infants[["PPB_bacteria"]])
+
+PPV_vir_freq_infants_species <- as.data.frame(table(unlist(unname( infant_PPVs_hostsp ))))
+colnames(PPV_vir_freq_infants_species)[1] <- 'Host.species'
+infant_PPVs_freq <- merge(infant_PPVs_freq, PPV_vir_freq_infants_species, by='Host.species')
+colnames(infant_PPVs_freq)[2:3] <- c('N_vOTUs', 'N_infants')
+infant_PPVs_freq$perc_infants <- infant_PPVs_freq$N_infants/14
+infant_PPVs_freq$Species <- gsub(' ', '_', gsub('.*s__', '', infant_PPVs_freq$Host.species))
+
+infant_PPVs_freq$Genus <- gsub(';.*', '', gsub('.*g__', '', infant_PPVs_freq$Host.species))
+infant_PPVs_freq_genus <- aggregate(.~Genus, infant_PPVs_freq[,c("Genus", "N_vOTUs")], 'sum')
+sum(infant_PPVs_freq_genus[infant_PPVs_freq_genus$Genus=="Bacteroides",]$N_vOTUs)/1054 # divided by total
+sum(infant_PPVs_freq_genus[infant_PPVs_freq_genus$Genus=="Phocaeicola",]$N_vOTUs)/1054 # divided by total
+#####
+
+PPB_bac_freq_infants <- read.table("03a.RESULTS/PPB_species_infants_frequency.txt", sep='\t', header=T, check.names = F)
+
+PPB_bac_freq_infants$Species <- gsub('.*s__', '', PPB_bac_freq_infants$Var1)
+
+PPV_PPB_infants <- merge(infant_PPVs_freq, PPB_bac_freq_infants, by='Species')
+
+infant_PPVs_freq_genus <- infant_PPVs_freq_genus[infant_PPVs_freq_genus$Genus %in% PPV_PPB_infants$Genus,]
+
+PPV_PPB_infants_genus_freq <- as.data.frame(table(PPV_PPB_infants$Genus))
+PPV_PPB_infants_genus_freq$N_infecting_vOTUs <- infant_PPVs_freq_genus$N_vOTUs[match(PPV_PPB_infants_genus_freq$Var1, infant_PPVs_freq_genus$Genus)]
+colnames(PPV_PPB_infants_genus_freq)[2] <- 'N_overlap_PP_species' 
+
+PPV_PPB_infants_genus_freq <- PPV_PPB_infants_genus_freq[order(PPV_PPB_infants_genus_freq$N_overlap_PP_species, 
+                                                               PPV_PPB_infants_genus_freq$N_infecting_vOTUs, decreasing = T),]
+
+PPV_PPB_infants_genus_freq <- rbind(PPV_PPB_infants_genus_freq,
+                                    data.frame(Var1='Other', 
+                                               N_overlap_PP_species=sum(PPV_PPB_infants_genus_freq$N_overlap_PP_species==1), 
+                                               N_infecting_vOTUs=sum(PPV_PPB_infants_genus_freq[PPV_PPB_infants_genus_freq$N_overlap_PP_species==1,]$N_infecting_vOTUs))
+                                    )
+PPV_PPB_infants_genus_freq <- PPV_PPB_infants_genus_freq[PPV_PPB_infants_genus_freq$N_overlap_PP_species!=1,]
+
+
+tmp <- melt(PPV_PPB_infants_genus_freq)
+tmp$Var1 <- factor(tmp$Var1, levels = PPV_PPB_infants_genus_freq$Var1, ordered = T)
+tmp$Phylum <- host_assignment_species$Phylum[match(tmp$Var1, host_assignment_species$Genus)]
+
+ggplot(tmp, aes(x = value, y = Var1, fill = Phylum)) +
+  geom_bar(stat = 'identity') +
+  facet_wrap(~variable, ncol = 1, scales = 'free_y', drop = TRUE,
+             labeller = as_labeller(c(N_overlap_PP_species = "N PPB species overlapping\nwith PPV host prediction", 
+                                      N_infecting_vOTUs = "N PPVs predicted to infect\nPPBs at species level")) ) +
+  labs(y = "", x = "") +
+  #scale_x_log10() +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.text.x = element_text(angle=60, vjust=1, hjust = 1),
+        axis.title = element_text(size = 12, face = "bold"),
+        legend.text = element_text(size = 10),
+        legend.title = element_blank(),
+        title =element_text(size=10)) + 
+  coord_flip() + 
+  scale_fill_manual(values = c('#FF9C0E', '#1F77B4', '#ED3419', '#B446B3'))
+##### FOR VISUALIZATION #####
+write.table(tmp, "02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Sup_xx_N_overlapping_PP_species_PPV_vs_PPB.txt", sep='\t', row.names=F)
 
 ### Mother vOTUs ###
 virstability_P7 <- stability_initial(VLP_metadata[VLP_metadata$Type=='Mother',], vOTUs_mothers, Mother_timepoints, 'Short_sample_ID', 'Richness')
@@ -487,7 +562,7 @@ PPB_vir_freq_mothers <- as.data.frame(table(unlist(unname( p_vir_frac_mothers[["
 
 p_vir_frac_mothers_individual <- p_vir_frac_mothers[["personal_biome_fractions"]]
 p_vir_frac_mothers_individual$Mother <- row.names(p_vir_frac_mothers_individual)
-p_vir_frac_mothers_individual <- melt(p_vir_frac_mothers_individual[,c('PPB', 'TDB', 'Singletons', 'Mother')], id.vars = 'Mother')
+p_vir_frac_mothers_individual <- melt(p_vir_frac_mothers_individual[,c('PPB', 'TDB', 'Mother')], id.vars = 'Mother')
 p_vir_frac_mothers_individual_df <- p_vir_frac_mothers_individual[p_vir_frac_mothers_individual$variable=='PPB',]
 p_vir_frac_mothers_individual_df <- p_vir_frac_mothers_individual_df[order(p_vir_frac_mothers_individual_df$value,decreasing = T),]
 p_vir_frac_mothers_individual$Mother <- factor(p_vir_frac_mothers_individual$Mother, levels=p_vir_frac_mothers_individual_df$Mother, ordered=T)
@@ -499,7 +574,7 @@ ggplot(p_vir_frac_mothers_individual, aes(Mother, value, fill=variable)) +
   ylab(label = "% of maternal personal virome") + 
   labs(fill='Fraction') +
   theme_bw() + 
-  scale_fill_manual(values=Monet[3:5], labels=c("PPV", "TDV", "Singletons")) +
+  scale_fill_manual(values=Monet[3:5], labels=c("PPV", "TDV")) +
   theme(axis.text.y=element_text(size=12), 
         axis.text.x=element_blank(),
         axis.ticks.x = element_blank(),
@@ -525,7 +600,7 @@ ggplot(p_vir_frac_mothers_per_sample_ab, aes(Sample, value, fill=variable)) +
   labs(fill='Fraction') +
   facet_grid(~Mother, space = "free_x", scales = "free_x") +
   theme_bw() + 
-  scale_fill_manual(values=Monet[3:5], labels=c('PPV', 'TDV', 'Singletons')) +
+  scale_fill_manual(values=Monet[3:5], labels=c('PPV', 'TDV')) +
   theme(axis.text.y=element_text(size=12), 
         axis.text.x=element_blank(),
         axis.ticks.x = element_blank(),
@@ -550,7 +625,7 @@ ggplot(plot_vir_frac_mothers_per_sample_N, aes(Sample, value, fill=variable)) +
   labs(fill='Fraction') +
   facet_grid(~Mother, space = "free_x", scales = "free_x") +
   theme_bw() + 
-  scale_fill_manual(values=Monet[3:5], labels=c('PPV', 'TDV', 'Singletons')) +
+  scale_fill_manual(values=Monet[3:5], labels=c('PPV', 'TDV')) +
   theme(axis.text.y=element_text(size=12), 
         axis.text.x=element_blank(),
         axis.ticks.x = element_blank(),
@@ -565,10 +640,10 @@ p_vir_frac_mothers_per_sample$viral_richness <- VLP_metadata$viral_richness[matc
 
 p_vir_frac_mothers_per_sample <- merge(p_vir_frac_mothers_per_sample, as.data.frame(colSums(RPKM_counts_VLP)), by="row.names")
 p_vir_frac_mothers_per_sample$Row.names <- NULL
-colnames(p_vir_frac_mothers_per_sample)[9] <- 'Total_space'
+colnames(p_vir_frac_mothers_per_sample)[7] <- 'Total_space'
 row.names(p_vir_frac_mothers_per_sample) <- p_vir_frac_mothers_per_sample$Sample
-p_vir_frac_mothers_per_sample_percs <- cbind(p_vir_frac_mothers_per_sample[,c("N_PPB", "N_TDB", "N_Singletons")]/p_vir_frac_mothers_per_sample[,"viral_richness"],
-                                             p_vir_frac_mothers_per_sample[,c("ab_PPB", "ab_TDB", "ab_Singletons")]/p_vir_frac_mothers_per_sample[,"Total_space"])
+p_vir_frac_mothers_per_sample_percs <- cbind(p_vir_frac_mothers_per_sample[,c("N_PPB", "N_TDB")]/p_vir_frac_mothers_per_sample[,"viral_richness"],
+                                             p_vir_frac_mothers_per_sample[,c("ab_PPB", "ab_TDB")]/p_vir_frac_mothers_per_sample[,"Total_space"])
 
 p_vir_frac_mothers_per_sample_percs <- p_vir_frac_mothers_per_sample_percs*100
 p_vir_frac_mothers_per_sample_percs_stat <- summary_stat_bootstrap(p_vir_frac_mothers_per_sample_percs, colnames(p_vir_frac_mothers_per_sample_percs))
@@ -581,18 +656,25 @@ model3 <- lmer(value ~ variable + (1|Individual_ID),
                data = p_vir_frac_mothers_per_sample_percs_melt[grep('N_', p_vir_frac_mothers_per_sample_percs_melt$variable),], REML = F)
 summary(model3)
 
-anova3 <- aov(value ~ variable,
-              data = p_vir_frac_mothers_per_sample_percs_melt[grep('N_', p_vir_frac_mothers_per_sample_percs_melt$variable),])
-TukeyHSD(anova3)
-boxplot(p_vir_frac_mothers_per_sample_percs[,c("N_PPB", "N_TDB", "N_Singletons")])
+boxplot(p_vir_frac_mothers_per_sample_percs[,c("N_PPB", "N_TDB")])
 
 model4 <- lmer(value ~ variable + (1|Individual_ID),
                data = p_vir_frac_mothers_per_sample_percs_melt[grep('ab_', p_vir_frac_mothers_per_sample_percs_melt$variable),], REML = F)
 summary(model4)
-anova4 <- aov(value ~ variable,
-              data = p_vir_frac_mothers_per_sample_percs_melt[grep('ab_', p_vir_frac_mothers_per_sample_percs_melt$variable),])
-TukeyHSD(anova4)
-boxplot(p_vir_frac_mothers_per_sample_percs[,c("ab_PPB", "ab_TDB", "ab_Singletons")])
+
+boxplot(p_vir_frac_mothers_per_sample_percs[,c("ab_PPB", "ab_TDB")])
+
+
+## host taxonomy of PPV:
+mother_PPVs <- host_assignment[host_assignment$Virus %in% unique(unlist(unname(p_vir_frac_mothers[["PPB_bacteria"]]))),]
+mother_PPVs_freq <- as.data.frame(table(mother_PPVs$Genus))
+mother_PPVs_freq <- mother_PPVs_freq[order(mother_PPVs_freq$Freq, decreasing = T),]
+sum(mother_PPVs_freq[1:10,]$Freq)/27951
+
+
+
+
+
 ##### OUTPUT #####
 write.table(virstability_M1, '03a.RESULTS/N_retained_vOTUs_from_M1_infants.txt', sep='\t', quote=F)
 write.table(virstability_M1_abundance, '03a.RESULTS/Abundance_retained_vOTUs_from_M1_infants.txt', sep='\t', quote=F)
@@ -605,3 +687,24 @@ write.table(virstability_P7_abundance, '03a.RESULTS/Abundance_retained_vOTUs_fro
 write.table(virpresence_from_P7, '03a.RESULTS/vOTUs_retained_from_P7_over_time_mothers.txt', sep='\t', quote=F)
 write.table(PPB_vir_freq_mothers, '03a.RESULTS/vOTUs_members_of_PPV_mothers_freq.txt', sep='\t', quote=F)
 write.table(p_vir_frac_mothers_per_sample, '03a.RESULTS/Fractions_of_personal_maternal_virome_N_and_abundance.txt', sep='\t', quote=F)
+
+###### RESULTS ######
+write.table(virstability_M1_time, '03a.RESULTS/vOTUs_stability_vs_time_metrics_phenos_mixed_models.txt', sep='\t', row.names = F, quote = F)
+write.table(virstability_M1_withtime, '03a.RESULTS/vOTUs_stability_metrics_over_time_phenos_mixed_models.txt', sep='\t', row.names = F, quote = F)
+
+##### FOR VISUALIZATION #####
+write.table(virstability_M1_stat, "02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig2A_N_retained_vOTUs_from_M1_infants_stat.txt", sep = '\t', quote=F)
+write.table(virstability_M1_abundance_stat, "02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig2B_RA_retained_vOTUs_from_M1_infants_stat.txt", sep = '\t', quote=F)
+write.table(plot_vir_frac_infants_per_sample_N, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig2C_N_fractions_personal_virome_infants.txt', sep='\t', quote=F, row.names = F)
+write.table(p_vir_frac_infants_per_sample_ab, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig2D_RA_fractions_personal_virome_infants.txt', sep='\t', quote=F, row.names = F)
+write.table(p_vir_frac_infants_individual_df, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig2BD_sorting_df_infants.txt', sep='\t', quote=F, row.names = F)
+write.table(virstability_P7_stat, "02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig2C_N_retained_vOTUs_from_P7_mothers_stat.txt", sep='\t', quote = F)
+write.table(virstability_P7_abundance_stat, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig2D_RA_retained_vOTUs_from_P7_mothers_stat.txt', sep='\t', quote=F)
+write.table(plot_vir_frac_mothers_per_sample_N, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig2A_N_fractions_personal_virome_mothers.txt', sep='\t', quote=F, row.names = F)
+write.table(p_vir_frac_mothers_per_sample_ab, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig2B_RA_fractions_personal_virome_mothers.txt', sep='\t', quote=F, row.names = F)
+write.table(p_vir_frac_mothers_individual_df, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig2AB_sorting_df_mothers.txt', sep='\t', quote=F, row.names = F)
+
+##### FOR SUPPLEMENTARY TABLE #####
+write.table(virstability_M1_time, "05.MANUSCRIPT/Supplementary_tables/MM_M1_vOTUs_retained_over_time_stat.txt", sep='\t', row.names=F, quote=F)
+write.table(as.data.frame(summary(model1)$coefficients)[,1:5], "05.MANUSCRIPT/Supplementary_tables/MM_N_vOTUs_fractions_sizes_comparison_infant.txt", sep='\t', quote=F)
+write.table(as.data.frame(summary(model2)$coefficients)[,1:5], '05.MANUSCRIPT/Supplementary_tables/MM_vOTUs_fractions_abundance_comparison_infant.txt', sep='\t', quote=F)
