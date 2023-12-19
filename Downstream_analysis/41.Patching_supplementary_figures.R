@@ -331,7 +331,7 @@ SFig1E <- ggplot(feeding_p_timepoint, aes(x=Timepoint, y=value, fill=feeding_mod
   geom_bar(position = "fill", stat = "identity") + 
   labs(x="Timepoint", y="% infants", fill="Feeding mode", tag="e") + 
   scale_fill_manual(values=c("#7B113A", "#150E56", "#1597BB", "#B31312"),
-                    labels=c('Breastfed', 'Formula-fed', "Mixed fed", "NA")) + 
+                    labels=c('Breastfed', 'Formula-fed', "Mixed-fed", "NA")) + 
   scale_y_continuous(labels = scales::percent_format()) +
   ggtitle("Feeding mode per timepoint") + 
   theme_bw()+
@@ -364,7 +364,8 @@ SFig1F <- ggplot(VLP_metadata, aes(Timepoint, viral_richness, fill=Type)) +
         strip.background = element_rect(color="black", fill=NA),
         plot.title = element_text(size=7, hjust=0.5), 
         plot.tag = element_text(face="bold", size=7, vjust=-4),
-        legend.position="none")
+        legend.position="none") + 
+  annotate(geom = "text", x = 3, y=15000, label="FDR=2.2e-06, beta=0.3", size=1.75) +
 
 
 SFig1DEF <- ( SFig1D | SFig1E | SFig1F) + plot_layout(nrow=1, widths = c(3.5,2.5,4), guides = "collect") & 
@@ -791,15 +792,17 @@ SFig4B <- ggplot(MGS_metadata[!is.na(MGS_metadata$infant_ever_never_breastfed),]
         legend.text = element_text(size=5),
         legend.title = element_text(size=7),
         plot.title = element_text(size=7, hjust=0.5, vjust=-2),
-        plot.tag = element_text(face="bold", size=7, vjust = -4)) +
-  scale_fill_manual(name = "Feeding mode", 
+        plot.tag = element_text(face="bold", size=7, vjust = -4),
+        legend.key.size=unit(0.7, "line")) +
+  scale_fill_manual(name = "Feeding\nmode", 
                     labels=c('Breastfed', 'Exclusively\nformula-fed'),
                     values=c("#EA5455", "#002B5B")) +
-  scale_color_manual(name = "Feeding mode", 
+  scale_color_manual(name = "Feeding\nmode", 
                      labels=c('Breastfed', 'Exclusively\nformula-fed'),
                      values=c("#EA5455", "#002B5B")) + 
   guides(fill=guide_legend(nrow=1, byrow=TRUE, title.position = 'left', title.hjust = 0.5), 
-         color=guide_legend(nrow=1, byrow=TRUE, title.position = 'left', title.hjust = 0.5))
+         color=guide_legend(nrow=1, byrow=TRUE, title.position = 'left', title.hjust = 0.5)) +
+  annotate("text", x=3.5, y=450, label="p-value=0.02, beta=53.5", size=1.75)
 
 
 ###### Supplementary Figure 4C #####
@@ -931,11 +934,11 @@ for (h in 2:NROW(virus_hists_data)) {
 }
 
 combined_plot <- combined_plot +
-  plot_layout(ncol = 5, guides = "collect") + 
-  plot_annotation(title = "") & theme(legend.position = "bottom")
+  plot_layout(ncol = 5, guides = "collect") +
+  plot_annotation(subtitle = "f") & theme(legend.position = "bottom", plot.subtitle = element_text(face="bold", size=7))
 
 
-SFig4ABCD <- (SFig4A + SFig4B + SFig4C) + plot_layout(ncol=3, widths=c(5, 2.5, 2.5),guides="collect") & theme(legend.position = "bottom",
+SFig4ABCD <- (SFig4A + SFig4B + SFig4C) + plot_layout(ncol=3, widths=c(5, 2.5, 2.5),guides="keep") & theme(legend.position = "bottom",
                                                                                                                    legend.margin=margin(0,0,0,0),
                                                                                                                    legend.box.margin=margin(-5,-5,-5,-5))
 
