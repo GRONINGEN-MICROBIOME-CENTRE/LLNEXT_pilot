@@ -187,8 +187,7 @@ persistent_taxa <- function(metadata, abundance_table, timepoints, sampleID) {
 
 # Function to fraction the personal microbiomes based in three categories
 # PPB: Personal Persistent Bug, that is detected in >= 75% of individual's samples
-# TDB: Transiently Detected Bug, that is deteceted in >= 2 of individual's samples
-# Singletons: detected only in 1 of individual's samples
+# TDB: Transiently Detected Bug, that is deteceted in < 75% of individual's samples
 # The function will calculate the N of species in each category per individual and timepoint
 # along with the abundance of species per category per timepoint
 # Arguments:
@@ -197,15 +196,14 @@ persistent_taxa <- function(metadata, abundance_table, timepoints, sampleID) {
 # - sampleID: Column name in metadata containing sample IDs
 personal_biome_fraction <- function(metadata, abundance_table, sampleID) {
   
-  p_biome_frac <- as.data.frame(matrix(NA, nrow = length(unique(metadata$Individual_ID)), ncol=5))
+  p_biome_frac <- as.data.frame(matrix(NA, nrow = length(unique(metadata$Individual_ID)), ncol=4))
   row.names(p_biome_frac) <- unique(metadata$Individual_ID)
-  colnames(p_biome_frac) <- c('PPB', 'TDB', 'Singletons', 'IPB','N_timepoints')
+  colnames(p_biome_frac) <- c('PPB', 'TDB', 'IPB','N_timepoints')
   
   p_biome_frac$N_timepoints <- metadata$N_timepoints[match(row.names(p_biome_frac), metadata$Individual_ID)]
   
   PPB_bacteria <- list()
   TDB_bacteria <- list()
-  Singletons_bacteria <- list()
   
   for (i in row.names(p_biome_frac) ) {
     
@@ -217,17 +215,11 @@ personal_biome_fraction <- function(metadata, abundance_table, sampleID) {
     # personal persistent bacteria per infant:
     PPB_bacteria[[i]] <- row.names(A[rowSums(A!=0)>=ncol(A)*0.75,])
     
-    # N of bacterial species that are present in less than 75% of samples of the infant but present in at least 2 samples
-    p_biome_frac[i,'TDB'] <- sum(rowSums(A!=0) < ncol(A)*0.75 & rowSums(A!=0) >= 2)
+    # N of bacterial species that are present in less than 75% of samples of the infant
+    p_biome_frac[i,'TDB'] <- sum(rowSums(A!=0) < ncol(A)*0.75)
     
     # personal transient bacteria per infant:
-    TDB_bacteria[[i]] <- row.names(A[rowSums(A!=0) < ncol(A)*0.75 & rowSums(A!=0) >= 2,])
-    
-    # N of bacterial species that are present only in one sample of the individual
-    p_biome_frac[i,'Singletons'] <- sum(rowSums(A!=0) == 1)
-    
-    # personal singletons:
-    Singletons_bacteria[[i]] <- row.names(A[rowSums(A!=0) == 1,])
+    TDB_bacteria[[i]] <- row.names(A[rowSums(A!=0) < ncol(A)*0.75,])
     
     # N of all bacterial species detected in the infant
     p_biome_frac[i, 'IPB'] <- sum(rowSums(A!=0) >= 1)
@@ -235,9 +227,9 @@ personal_biome_fraction <- function(metadata, abundance_table, sampleID) {
   }
   
   
-  p_biome_frac_ab <- as.data.frame(matrix(NA, nrow = length(metadata[,sampleID]), ncol=6))
+  p_biome_frac_ab <- as.data.frame(matrix(NA, nrow = length(metadata[,sampleID]), ncol=4))
   row.names(p_biome_frac_ab) <- metadata[,sampleID]
-  colnames(p_biome_frac_ab) <- c('ab_PPB', 'N_PPB','ab_TDB', 'N_TDB', 'ab_Singletons', 'N_Singletons')
+  colnames(p_biome_frac_ab) <- c('ab_PPB', 'N_PPB','ab_TDB', 'N_TDB')
   
   for (i in row.names(p_biome_frac_ab)) {
     A <- abundance_table[,i, drop=FALSE]
@@ -249,15 +241,12 @@ personal_biome_fraction <- function(metadata, abundance_table, sampleID) {
     p_biome_frac_ab[i,'ab_TDB'] <- sum(A[TDB_bacteria[[metadata[metadata[,sampleID]==i,]$Individual_ID]],])
     p_biome_frac_ab[i,'N_TDB'] <- sum(A[TDB_bacteria[[metadata[metadata[,sampleID]==i,]$Individual_ID]],]>0)
     
-    p_biome_frac_ab[i,'ab_Singletons'] <- sum(A[Singletons_bacteria[[metadata[metadata[,sampleID]==i,]$Individual_ID]],])
-    p_biome_frac_ab[i,'N_Singletons'] <- sum(A[Singletons_bacteria[[metadata[metadata[,sampleID]==i,]$Individual_ID]],]>0)
   }
   
   result <- list()
   result[["personal_biome_fractions"]] <- p_biome_frac
   result[["PPB_bacteria"]] <- PPB_bacteria
   result[["TDB_bacteria"]] <- TDB_bacteria
-  result[["Singletons_bacteria"]] <- Singletons_bacteria
   result[["personal_biome_per_sample"]] <- p_biome_frac_ab
   return(result)
   
