@@ -9,7 +9,59 @@ setwd('~/Desktop/Projects_2022/NEXT_pilot_FUP/')
 ##############################
 # Functions
 ##############################
-
+mixed_models_taxa <- function(metadata, ID, CLR_transformed_data, pheno_list, consider_time) {
+  df <- metadata
+  row.names(df) <- df[,ID]
+  df<-merge(df, CLR_transformed_data, by='row.names')
+  row.names(df) <- df$Row.names
+  df$Row.names <- NULL
+  
+  Prevalent= c(colnames(CLR_transformed_data))
+  #pheno_list= phenotypes
+  
+  Overall_result_phenos =tibble() 
+  
+  for (Bug in Prevalent){
+    if (! Bug %in% colnames(df)){ next }
+    #Prevalence = sum(as.numeric(as_vector(select(df, Bug)) > 0)) / dim(df)[1]
+    # print (c(Bug, Prevalence))
+    Bug2 = paste(c("`",Bug, "`"), collapse="")
+    for ( pheno in pheno_list){
+      pheno2 = paste(c("`",pheno, "`"), collapse="")
+      df[is.na(df[colnames(df) == pheno]) == F, ID] -> To_keep
+      df_pheno = filter(df, !!sym(ID) %in% To_keep )
+      
+      if (consider_time=='time_as_covariate') {
+        Model0 = as.formula(paste( c(Bug2,  " ~ DNA_CONC + Clean_reads + infant_mode_delivery + Age_months + (1|Individual_ID)"), collapse="" )) 
+      } else { # else is mainly for associating entities with time alone
+        Model0 = as.formula(paste( c(Bug2,  " ~ DNA_CONC + Clean_reads + (1|Individual_ID)"), collapse="" )) 
+      }
+      
+      lmer(Model0, df_pheno) -> resultmodel0
+      base_model=resultmodel0
+      
+      if (consider_time=='time_as_covariate') {
+        Model2 = as.formula(paste( c(Bug2,  " ~ DNA_CONC + Clean_reads + infant_mode_delivery + Age_months + ",pheno2, "+ (1|Individual_ID)"), collapse="" ))
+      } else { # else is mainly for associating entities with time alone
+        Model2 = as.formula(paste( c(Bug2,  " ~ DNA_CONC + Clean_reads + ",pheno2, "+ (1|Individual_ID)"), collapse="" ))
+      }
+      
+      lmer(Model2, df_pheno, REML = F) -> resultmodel2
+      M = "Mixed"
+      as.data.frame(anova(resultmodel2, base_model))['resultmodel2','Pr(>Chisq)']->p_simp
+      as.data.frame(summary(resultmodel2)$coefficients)[grep(pheno, row.names(as.data.frame(summary(resultmodel2)$coefficients))),] -> Summ_simple
+      Summ_simple %>% rownames_to_column("Feature") %>% as_tibble() %>% mutate(P = p_simp, Model_choice = M, Bug =Bug, Pheno=pheno, Model="simple") -> temp_output
+      rbind(Overall_result_phenos, temp_output) -> Overall_result_phenos
+    }
+  }
+  
+  p=as.data.frame(Overall_result_phenos)
+  p <- p[! duplicated(paste0(p$Pheno, p$Bug)),]
+  p$FDR<-p.adjust(p$P, method = "BH")
+  
+  return(p)
+  
+}
 ##############################
 # Loading libraries
 ##############################
@@ -18,6 +70,12 @@ library(vegan)
 library(ggplot2)
 library(ggExtra)
 library(ggrepel)
+
+library(dplyr)
+library(tibble)
+library(lme4)
+library(RLRsim)
+library(lmerTest)
 ##############################
 # Input data
 ##############################
@@ -88,13 +146,16 @@ ggMarginal(gg, type="densigram", groupFill=T)
 dev.off()
 
 ### calculating the significance of separation:
-if (identical(colnames(microbiome), MGS_metadata$Short_sample_ID_bact)) {
-  bacteria_permanova <- adonis2(t(microbiome) ~ Type +  bacterial_alpha_diversity + Clean_reads + DNA_CONC + metaphlan_unknown_perc, 
-                                data=MGS_metadata,  
-                                permutations = 999,
-                                method="bray",
-                                by = "margin")
-}
+ord2 <- metaMDS(t(microbiome), distance = "bray", k=1)
+
+colnames(MGS_metadata)
+
+infants_phenos_MGS <- mixed_models_taxa(MGS_metadata, 
+                                        "Short_sample_ID_bact", 
+                                        as.data.frame(scores(ord2, "sites")), 
+                                        c( "Type"), "dont_consider_time")
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(infants_phenos_MGS, '05.MANUSCRIPT/Supplementary_tables/MM_bacteriome_NMDS1_Type.txt', sep='\t', quote=F)
 
 #### NMDS for virome
 
@@ -150,14 +211,17 @@ dev.off()
 
 
 ### calculating the significance of separation:
-RPKM_counts_VLP <- RPKM_counts_VLP[,VLP_metadata$Short_sample_ID]
-if (identical(colnames(RPKM_counts_VLP), VLP_metadata$Short_sample_ID)) {
-  viruses_permanova <- adonis2(t(RPKM_counts_VLP) ~ Type +viral_alpha_diversity + Clean_reads + DNA_CONC + bacterial_contamination_perc_reads, 
-                                data=VLP_metadata,  
-                                permutations = 999,
-                                method="bray",
-                                by = "margin")
-}
+ord2 <- metaMDS(t(RPKM_counts_VLP), distance = "bray", k=1)
+
+colnames(VLP_metadata)
+
+infants_phenos_VLP <- mixed_models_taxa(VLP_metadata, 
+                                        "Short_sample_ID", 
+                                        as.data.frame(scores(ord2, "sites")), 
+                                        c( "Type"), "dont_consider_time")
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(infants_phenos_VLP, '05.MANUSCRIPT/Supplementary_tables/MM_virome_NMDS1_Type.txt', sep='\t', quote=F)
+
 
 #### NMDS for viruses aggregated based on bacterial hosts at the species-level
 

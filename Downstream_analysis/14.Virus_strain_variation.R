@@ -533,8 +533,8 @@ for (i in list_transmitted$Virus) {
                                                     list_transmitted[i,"N_unrelated_pairs_transmitted"],
                                                     (list_transmitted[i, "N_unrelated_pairs"] - list_transmitted[i,"N_unrelated_pairs_transmitted"])),
                                                   nrow=2,
-                                                  dimnames = list(Transmitted=c('Related', 'Unrelated'),
-                                                                  Not_transmitted=c('Related', 'Unrelated'))) 
+                                                  dimnames = list(c('Transmitted', 'Not_transmitted'),
+                                                                  c('Related', 'Unrelated'))) 
   
   check_association_with_kinship <- fisher.test(testing_enrichment_transmission[[i]], alternative="greater")
   
@@ -543,6 +543,9 @@ for (i in list_transmitted$Virus) {
 }
 
 list_transmitted$p_value_kinship_transmission_adj <- p.adjust(list_transmitted$p_value_kinship_transmission, method = "BH")
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(list_transmitted, '05.MANUSCRIPT/Supplementary_tables/Virus_stat_enrichment_in_related', sep='\t', quote=F, row.names=F)
+
 
 selected_viruses$FDR_enirched_related_transmission <- list_transmitted$p_value_kinship_transmission_adj[match(selected_viruses$Virus, list_transmitted$Virus)]
 selected_viruses$Transmission_enriched_in_related <- ifelse( (selected_viruses$FDR_enirched_related_transmission <= 0.05), "YES", "NO" )
@@ -692,3 +695,6 @@ write.table(selected_viruses, '02.CLEAN_DATA/List_viruses_selected_transmission_
 #write.table(metadata[(metadata$Alex_ID %in% colnames(virus[['LN_4F04_VL_266_NODE_141_length_37775_cov_36892.259438']])) &
 #                       metadata$source=='MGS', ]$NG_ID, '03.SCRIPTS/NEXT_pilot_FUP_bf_origin/Data_for_Alex/L37775_LS1_MGS_positive_list.txt', sep='\t', quote=F, row.names = F, col.names = F)
 
+###### FOR VISUALIZATION ######
+write.table(for_plot, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/4B_Perc_transmitted_viruses_in_pairs_maximized_Youden_with_N.txt', sep='\t', quote=F)
+saveRDS(virus_hists_data, file = "02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig4_within_individual_virus_variation_cut_off.rds")
