@@ -535,8 +535,8 @@ for (i in list_transmitted$Host_SGB) {
                                                     list_transmitted[i,"N_unrelated_pairs_transmitted"],
                                                     (list_transmitted[i, "N_unrelated_pairs"] - list_transmitted[i,"N_unrelated_pairs_transmitted"])),
                                                   nrow=2,
-                                                  dimnames = list(Transmitted=c('Related', 'Unrelated'),
-                                                                  Not_transmitted=c('Related', 'Unrelated'))) 
+                                                  dimnames = list(c('Transmitted', 'Not_transmitted'),
+                                                                  c('Related', 'Unrelated'))) 
   
   check_association_with_kinship <- fisher.test(testing_enrichment_transmission[[i]], alternative="greater")
   
@@ -546,6 +546,7 @@ for (i in list_transmitted$Host_SGB) {
 
 list_transmitted$p_value_kinship_transmission_adj <- p.adjust(list_transmitted$p_value_kinship_transmission, method = "BH")
 
+
 selected_viruses$Host_FDR_enirched_related_transmission <- list_transmitted$p_value_kinship_transmission_adj[match(selected_viruses$Host_SGB, list_transmitted$Host_SGB)]
 selected_viruses$Host_Transmission_enriched_in_related <- ifelse( (selected_viruses$Host_FDR_enirched_related_transmission <= 0.05), "YES", "NO" )
 
@@ -554,7 +555,9 @@ list_transmitted[list_transmitted$p_value_kinship_transmission_adj > 0.05,]$sign
 list_transmitted[list_transmitted$p_value_kinship_transmission_adj <= 0.05,]$significance_level_transmission <- '*'
 list_transmitted[list_transmitted$p_value_kinship_transmission_adj <= 0.01,]$significance_level_transmission <- '**'
 list_transmitted[list_transmitted$p_value_kinship_transmission_adj <= 0.001,]$significance_level_transmission <- '***'
-list_transmitted$species_names <- gsub('_', ' ',list_transmitted$Host_species)
+# renaming contigs for easier perception:
+species_names$species <- paste0(gsub('_',' ',species_names$species), '_', gsub('SGB','',species_names$Host_SGB))
+list_transmitted$species_names <- species_names$species[match(list_transmitted$Host_SGB, species_names$Host_SGB)]
 
 # calculate how many unique mother-infant pairs are positive for the bacterium:
 # create empty lists to keep the N unique mother-infant pairs sharing the bacterium:
@@ -665,8 +668,16 @@ pdf('./04.PLOTS/Perc_transmittedin_pairs_maximized_Youden_bacteria.pdf', width=7
 p1
 dev.off()
 
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(list_transmitted, '05.MANUSCRIPT/Supplementary_tables/BacStr_stat_enrichment_in_related.txt', sep='\t', quote=F, row.names=F)
+
 ##############################
 # OUTPUT
 ##############################
 write.table(selected_viruses, "02.CLEAN_DATA/List_viruses_selected_transmission_metadata_with_host.txt", sep='\t', row.names = F, quote=F)
 write.table(list_transmitted[,-c(1:6)], '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Perc_transmitted_bacteria_in_pairs_maximized_Youden_with_N.txt', sep='\t', quote=F)
+
+##### FOR VISUALIZATION #####
+write.table(for_plot, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/Fig4D_Perc_transmitted_bacteria_in_pairs_maximized_Youden_with_N.txt', sep='\t', row.names=F)
+saveRDS(bacterium_hists_data, file = "02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig5_within_individual_bacterium_variation_cut_off.rds")
+
