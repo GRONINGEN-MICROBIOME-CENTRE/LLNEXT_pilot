@@ -168,14 +168,9 @@ colnames(MGS_metadata)
 infants_phenos_MGS <- mixed_models_taxa(MGS_metadata[MGS_metadata$Type=='Infant',], 
                                     "Short_sample_ID_bact", 
                                     as.data.frame(scores(ord2, "sites")), 
-                                    c("infant_type_pregnancy", "infant_sex", "infant_gestational_age",
-                                    "infant_birthweight", "infant_place_delivery", "infant_mode_delivery",
-                                    "mother_age_years", "infant_feeding_mode_imputed_W2", "infant_feeding_mode_imputed_M1", 
-                                    "infant_ever_never_breastfed", "Age_days", "perc_reads_aligned", "viral_richness_MGS", 
-                                    "viral_alpha_diversity_MGS", "temperate_richness_MGS", "temperate_RA_MGS",
-                                    "bacterial_alpha_diversity", "infant_ffq_feeding_mode_simple", "infant_ffq_feeding_mode_complex"), "dont_consider_time")
-
-infants_phenos_MGS <- infants_phenos_MGS[infants_phenos_MGS$FDR<0.05,]
+                                    c( "Age_days"), "dont_consider_time")
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(infants_phenos_MGS, '05.MANUSCRIPT/Supplementary_tables/MM_infant_bacteriome_NMDS1_over_time.txt', sep='\t', quote=F)
 
 data.scores2 = as.data.frame(scores(ord2, "sites"))
 data.scores2 <- merge(data.scores2, MGS_metadata[MGS_metadata$Type=='Infant',], by='row.names')
@@ -310,10 +305,11 @@ colnames(VLP_metadata)
 infants_phenos_VLP <- mixed_models_taxa(VLP_metadata[VLP_metadata$Type=='Infant',], 
                                     "Short_sample_ID", 
                                     as.data.frame(scores(ord2, "sites")), 
-                                    c("infant_place_delivery", "Age_days",
-                                      "bacterial_alpha_diversity", "infant_ffq_feeding_mode_complex" ), "dont_consider_time")
+                                    c("Age_days"), "dont_consider_time")
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(infants_phenos_VLP, '05.MANUSCRIPT/Supplementary_tables/MM_infant_virome_NMDS1_over_time.txt', sep='\t', quote=F)
 
-infants_phenos_VLP <- infants_phenos_VLP[infants_phenos_VLP$FDR<0.05,]
+
 
 
 
