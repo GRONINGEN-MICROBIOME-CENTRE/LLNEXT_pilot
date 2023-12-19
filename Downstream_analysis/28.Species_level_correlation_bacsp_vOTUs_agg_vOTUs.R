@@ -33,7 +33,7 @@ mixed_models_taxa <- function(metadata, ID, CLR_transformed_data, pheno_list, co
       df_pheno = filter(df, !!sym(ID) %in% To_keep )
       
       if (consider_time=='time_as_covariate') {
-        Model0 = as.formula(paste( c(Bug2,  " ~ DNA_CONC + Clean_reads + infant_mode_delivery + Timepoint + (1|Individual_ID)"), collapse="" )) 
+        Model0 = as.formula(paste( c(Bug2,  " ~ DNA_CONC + Clean_reads + infant_mode_delivery + Age_months + (1|Individual_ID)"), collapse="" )) 
       } else { # else is mainly for associating entities with time alone
         Model0 = as.formula(paste( c(Bug2,  " ~ DNA_CONC + Clean_reads + (1|Individual_ID)"), collapse="" )) 
       }
@@ -42,7 +42,7 @@ mixed_models_taxa <- function(metadata, ID, CLR_transformed_data, pheno_list, co
       base_model=resultmodel0
       
       if (consider_time=='time_as_covariate') {
-        Model2 = as.formula(paste( c(Bug2,  " ~ DNA_CONC + Clean_reads + infant_mode_delivery + Timepoint + ",pheno2, "+ (1|Individual_ID)"), collapse="" ))
+        Model2 = as.formula(paste( c(Bug2,  " ~ DNA_CONC + Clean_reads + infant_mode_delivery + Age_months + ",pheno2, "+ (1|Individual_ID)"), collapse="" ))
       } else { # else is mainly for associating entities with time alone
         Model2 = as.formula(paste( c(Bug2,  " ~ DNA_CONC + Clean_reads + ",pheno2, "+ (1|Individual_ID)"), collapse="" ))
       }
@@ -57,6 +57,7 @@ mixed_models_taxa <- function(metadata, ID, CLR_transformed_data, pheno_list, co
   }
   
   p=as.data.frame(Overall_result_phenos)
+  p <- p[! duplicated(paste0(p$Pheno, p$Bug)),]
   p$FDR<-p.adjust(p$P, method = "BH")
   
   return(p)
@@ -94,6 +95,7 @@ linear_model_taxa <- function(metadata, ID, CLR_transformed_data, pheno_list) {
   }
   
   p=as.data.frame(Overall_result_phenos)
+  p <- p[! duplicated(paste0(p$Pheno, p$Bug)),]
   p$FDR<-p.adjust(p$P, method = "BH")
   
   return(p)
@@ -161,14 +163,16 @@ vOTUs_assigned_BacSp_filt_CLR <- decostand(vOTUs_assigned_BacSp_filt, "clr", pse
 ##############################
 # ANALYSIS
 ##############################
-species_phenos <- mixed_models_taxa(MGS_metadata, "Short_sample_ID_bact", species_filt_CLR, c("infant_sex","infant_gestational_age", "infant_birthweight",
-                                                                                              "infant_place_delivery", "mother_age_years",
-                                                                                              "infant_ffq_feeding_mode_complex"), 'time_as_covariate')
+species_phenos <- mixed_models_taxa(MGS_metadata, "Short_sample_ID_bact", species_filt_CLR, c("infant_place_delivery", 
+                                                                                              "infant_ffq_feeding_mode_complex",
+                                                                                              "infant_ever_never_breastfed"), 'time_as_covariate')
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(species_phenos, '05.MANUSCRIPT/Supplementary_tables/MM_BacSp_RA_phenos_over_time_infant.txt', sep='\t', quote=F)
 
 crossectional_solid_food <- linear_model_taxa(MGS_metadata[MGS_metadata$Timepoint=='M6',], "Short_sample_ID_bact", species_filt_CLR, "infant_food_solid_intro_M6")
 
 
-place_of_delivery_bacteria <- species_filt_CLR[,unique(species_phenos[species_phenos$P < 0.05 & species_phenos$Pheno %in% c('infant_place_delivery'),]$Bug), drop=F]
+place_of_delivery_bacteria <- species_filt_CLR[,unique(species_phenos[species_phenos$FDR < 0.05 & species_phenos$Pheno %in% c('infant_place_delivery'),]$Bug), drop=F]
 colnames(place_of_delivery_bacteria) <- gsub('.*s__', '', colnames(place_of_delivery_bacteria))
 place_of_delivery_bacteria <- merge(place_of_delivery_bacteria, MGS_metadata[,c("Timepoint", 'infant_place_delivery', 'infant_mode_delivery', 'Age_months', 'DNA_CONC', 'Clean_reads', 'NEXT_ID')], by='row.names')
 
@@ -188,15 +192,39 @@ ggplot(place_of_delivery_bacteria, aes(Timepoint, Akkermansia_muciniphila, fill=
                     values=c("#FAE3D9", "#BBDED6"))
 dev.off()
 
-vOTUs_phenos <- mixed_models_taxa(VLP_metadata, "Short_sample_ID", RPKM_counts_VLP_filt_CLR, c("infant_sex","infant_gestational_age", "infant_birthweight",
-                                                                                               "infant_place_delivery", "mother_age_years",
-                                                                                               "infant_ffq_feeding_mode_complex"), 'time_as_covariate')
+ggplot(place_of_delivery_bacteria, aes(infant_place_delivery, Akkermansia_muciniphila, fill=infant_place_delivery)) + 
+  labs (y="CLR transformed abundance", x="Place of delivery") + 
+  ylim(-4, 13) +
+  geom_sina(aes(color=infant_place_delivery), size=0.6) +
+  geom_boxplot(aes(color=infant_place_delivery), outlier.shape = NA, alpha=0.5) + 
+  scale_color_manual(name = "Place of delivery", 
+                     labels=c('Home', 'Hospital', 'CS', 'VG'),
+                     values=c("#FAE3D9", "#BBDED6", 'red', 'black')) +
+  annotate("text", x=1.5, y=12, label="FDR=0.04,\nbeta hospital=-2.50817023") +
+  theme_bw()+
+  theme(axis.text=element_text(size=12), 
+        axis.title=element_text(size=16,face="bold"),
+        strip.text.x = element_text(size = 12),
+        legend.text = element_text(size=10),
+        legend.title = element_text(size=12, face="bold")) +
+  scale_fill_manual(name = "Place of delivery", 
+                    labels=c('Home', 'Hospital'),
+                    values=c("#FAE3D9", "#BBDED6")) 
+
+
+
+vOTUs_phenos <- mixed_models_taxa(VLP_metadata, "Short_sample_ID", RPKM_counts_VLP_filt_CLR, c("infant_place_delivery", 
+                                                                                               "infant_ffq_feeding_mode_complex",
+                                                                                               "infant_ever_never_breastfed"), 'time_as_covariate')
 
 vOTUs_crossectional_solid_food <- linear_model_taxa(VLP_metadata[VLP_metadata$Timepoint=='M6',], "Short_sample_ID", RPKM_counts_VLP_filt_CLR, "infant_food_solid_intro_M6")
 
-vOTUs_aggr_BacSp_phenos <- mixed_models_taxa(VLP_metadata, "Short_sample_ID", vOTUs_assigned_BacSp_filt_CLR, c("infant_sex","infant_gestational_age", "infant_birthweight",
-                                                                                                               "infant_place_delivery", "mother_age_years",
-                                                                                                               "infant_ffq_feeding_mode_complex"), 'time_as_covariate')
+vOTUs_aggr_BacSp_phenos <- mixed_models_taxa(VLP_metadata, "Short_sample_ID", vOTUs_assigned_BacSp_filt_CLR, c("infant_place_delivery", 
+                                                                                                               "infant_ffq_feeding_mode_complex",
+                                                                                                               "infant_ever_never_breastfed"), 'time_as_covariate')
+#### FOR SUPPLEMENTARY TABLE ####
+write.table(vOTUs_aggr_BacSp_phenos, '05.MANUSCRIPT/Supplementary_tables/MM_vOTUs_aggr_BacSp_RA_phenos_over_time_infant.txt', sep='\t', quote=F)
+
 
 vOTUs_aggr_crossectional_solid_food <- linear_model_taxa(VLP_metadata[VLP_metadata$Timepoint=='M6',], "Short_sample_ID", vOTUs_assigned_BacSp_filt_CLR, "infant_food_solid_intro_M6")
 
@@ -220,9 +248,47 @@ ggplot(place_of_delivery_phages, aes(Timepoint, `Akkermansia muciniphila`, fill=
                     values=c("#FAE3D9", "#BBDED6"))
 dev.off()
 
+ggplot(place_of_delivery_phages, aes(infant_place_delivery, `Akkermansia muciniphila`, fill=infant_place_delivery)) + 
+  labs (y="CLR transformed abundance", x="Place of delivery") + 
+  ylim(-4, 13) +
+  geom_sina(aes(color=infant_place_delivery), size=0.6) +
+  geom_boxplot(aes(color=infant_place_delivery), outlier.shape = NA, alpha=0.5) + 
+  scale_color_manual(name = "Place of delivery", 
+                     labels=c('Home', 'Hospital', 'CS', 'VG'),
+                     values=c("#FAE3D9", "#BBDED6", 'red', 'black')) +
+  annotate("text", x=1.5, y=12, label="p-value=0.01,\nbeta hospital=-1.5") +
+  theme_bw()+
+  theme(axis.text=element_text(size=12), 
+        axis.title=element_text(size=16,face="bold"),
+        strip.text.x = element_text(size = 12),
+        legend.text = element_text(size=10),
+        legend.title = element_text(size=12, face="bold")) +
+  scale_fill_manual(name = "Place of delivery", 
+                    labels=c('Home', 'Hospital'),
+                    values=c("#FAE3D9", "#BBDED6")) 
+
+place_of_delivery_phages$Universal_fecal_ID <- gsub('V', '', place_of_delivery_phages$Row.names)
+place_of_delivery_bacteria$Universal_fecal_ID <- gsub('B', '', place_of_delivery_bacteria$Row.names)
+A_muciniphila_VH <- merge(place_of_delivery_bacteria[,c("Universal_fecal_ID", "Akkermansia_muciniphila", 
+                                                        "Timepoint", "DNA_CONC", "NEXT_ID", "Clean_reads", 
+                                                        "Age_months", "infant_place_delivery", "infant_mode_delivery")], place_of_delivery_phages[,c("Universal_fecal_ID", "Akkermansia muciniphila")], by="Universal_fecal_ID")
+colnames(A_muciniphila_VH)[10] <- paste0('vOTUs_', colnames(A_muciniphila_VH)[10])
+summary(lmer(`vOTUs_Akkermansia muciniphila` ~ Akkermansia_muciniphila + DNA_CONC + Clean_reads + infant_mode_delivery + infant_place_delivery + Age_months + (1|NEXT_ID) , REML = F,  data = A_muciniphila_VH))
+
+ggplot(A_muciniphila_VH, aes(Akkermansia_muciniphila, `vOTUs_Akkermansia muciniphila`, color=infant_place_delivery)) + 
+  geom_point() +
+  geom_smooth(inherit.aes = F, aes(Akkermansia_muciniphila, `vOTUs_Akkermansia muciniphila`), method="lm") +
+  annotate("text", x=4, y=7, label="p-value=5.1e-09\nbeta bacteria=2.6-01")+
+  theme_bw()
+  
 host_assignment <- read.table('02.CLEAN_DATA/Host_prediction_to_genus_m90_refined_taxonomy_no_generalists.txt', sep='\t', header=T)
 
 ###### OUTPUT #####
 write.table(species_phenos, '03a.RESULTS/TOP_PREVALENT_RA_SPECIES_phenos_mixed_models_all_results.txt', sep='\t', row.names=F, quote=F)
 write.table(vOTUs_phenos, '03a.RESULTS/TOP_PREVALENT_RA_vOTUs_phenos_mixed_models_all_results.txt', sep='\t', row.names=F, quote=F)
 write.table(vOTUs_aggr_BacSp_phenos, '03a.RESULTS/TOP_PREVALENT_RA_aggregated_vOTUs_at_species_phenos_mixed_models_all_results.txt', sep='\t', row.names=F, quote=F)
+
+###### FOR VISUALIZATION #####
+write.table(place_of_delivery_bacteria, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig3G_A_muciniphila_place_of_birth.txt', sep='\t', row.names = F, quote=F)
+write.table(place_of_delivery_phages, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig3H_A_muciniphila_phages_place_of_birth.txt', sep='\t', row.names = F, quote=F)
+write.table(A_muciniphila_VH, '02.CLEAN_DATA/PREPARED_DATA_FOR_PLOTS/SFig3I_A_muciniphila_correlation_with_its_phages.txt', sep='\t', row.names = F, quote=F)
