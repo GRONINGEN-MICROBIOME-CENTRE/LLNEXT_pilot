@@ -10,7 +10,59 @@ setwd('~/Desktop/Projects_2022/NEXT_pilot_FUP/')
 ##############################
 # Functions
 ##############################
-
+mixed_models_taxa <- function(metadata, ID, CLR_transformed_data, pheno_list, consider_time) {
+  df <- metadata
+  row.names(df) <- df[,ID]
+  df<-merge(df, CLR_transformed_data, by='row.names')
+  row.names(df) <- df$Row.names
+  df$Row.names <- NULL
+  
+  Prevalent= c(colnames(CLR_transformed_data))
+  #pheno_list= phenotypes
+  
+  Overall_result_phenos =tibble() 
+  
+  for (Bug in Prevalent){
+    if (! Bug %in% colnames(df)){ next }
+    #Prevalence = sum(as.numeric(as_vector(select(df, Bug)) > 0)) / dim(df)[1]
+    # print (c(Bug, Prevalence))
+    Bug2 = paste(c("`",Bug, "`"), collapse="")
+    for ( pheno in pheno_list){
+      pheno2 = paste(c("`",pheno, "`"), collapse="")
+      df[is.na(df[colnames(df) == pheno]) == F, ID] -> To_keep
+      df_pheno = filter(df, !!sym(ID) %in% To_keep )
+      
+      if (consider_time=='time_as_covariate') {
+        Model0 = as.formula(paste( c(Bug2,  " ~ DNA_CONC + Clean_reads + infant_mode_delivery + Age_months + (1|Individual_ID)"), collapse="" )) 
+      } else { # else is mainly for associating entities with time alone
+        Model0 = as.formula(paste( c(Bug2,  " ~ DNA_CONC + Clean_reads + (1|Individual_ID)"), collapse="" )) 
+      }
+      
+      lmer(Model0, df_pheno) -> resultmodel0
+      base_model=resultmodel0
+      
+      if (consider_time=='time_as_covariate') {
+        Model2 = as.formula(paste( c(Bug2,  " ~ DNA_CONC + Clean_reads + infant_mode_delivery + Age_months + ",pheno2, "+ (1|Individual_ID)"), collapse="" ))
+      } else { # else is mainly for associating entities with time alone
+        Model2 = as.formula(paste( c(Bug2,  " ~ DNA_CONC + Clean_reads + ",pheno2, "+ (1|Individual_ID)"), collapse="" ))
+      }
+      
+      lmer(Model2, df_pheno, REML = F) -> resultmodel2
+      M = "Mixed"
+      as.data.frame(anova(resultmodel2, base_model))['resultmodel2','Pr(>Chisq)']->p_simp
+      as.data.frame(summary(resultmodel2)$coefficients)[grep(pheno, row.names(as.data.frame(summary(resultmodel2)$coefficients))),] -> Summ_simple
+      Summ_simple %>% rownames_to_column("Feature") %>% as_tibble() %>% mutate(P = p_simp, Model_choice = M, Bug =Bug, Pheno=pheno, Model="simple") -> temp_output
+      rbind(Overall_result_phenos, temp_output) -> Overall_result_phenos
+    }
+  }
+  
+  p=as.data.frame(Overall_result_phenos)
+  p <- p[! duplicated(paste0(p$Pheno, p$Bug)),]
+  p$FDR<-p.adjust(p$P, method = "BH")
+  
+  return(p)
+  
+}
 ##############################
 # Loading libraries
 ##############################
@@ -19,16 +71,23 @@ library(vegan)
 library(ggplot2)
 library(ggExtra)
 library(ggrepel)
+
+library(dplyr)
+library(tibble)
+library(lme4)
+library(RLRsim)
+library(lmerTest)
 ##############################
 # Input data
 ##############################
-MGS_metadata <- read.table('02.CLEAN_DATA/MGS_metadata_with_phenos.txt', sep='\t', header=T)
+MGS_metadata <- read.table('02.CLEAN_DATA/MGS_metadata_final_10_05_2023.txt', sep='\t', header=T)
 MGS_metadata$Type <- factor(MGS_metadata$Type, levels=c('Infant', 'Mother'), ordered=T)
 
+
 microbiome <- read.table('02.CLEAN_DATA/Microbiome_species_unfiltred.txt', sep='\t', header=T)
-# filtering for presence in more than 5% of microbiome samples:
-microbiome_filt <- microbiome[(rowSums(microbiome!=0) > 0.05*ncol(microbiome)),  ]
-microbiome_filt <- as.data.frame(t(microbiome_filt))
+## filtering for presence in more than 5% of microbiome samples:
+#microbiome_filt <- microbiome[(rowSums(microbiome!=0) > 0.05*ncol(microbiome)),  ]
+microbiome_filt <- as.data.frame(t(microbiome))
 # CLR-transformation
 my_pseudocount_normal=min(microbiome_filt[microbiome_filt!=0])/2
 microbiome_filt_CLR<-decostand(microbiome_filt, "clr", pseudocount=my_pseudocount_normal)
@@ -36,12 +95,12 @@ microbiome_filt_CLR<-decostand(microbiome_filt, "clr", pseudocount=my_pseudocoun
 microbiome <- microbiome_filt_CLR
 
 
-VLP_metadata <- read.table('02.CLEAN_DATA/VLP_metadata_with_phenos.txt', sep='\t', header=T)
+VLP_metadata <- read.table('02.CLEAN_DATA/VLP_metadata_final_10_05_2023.txt', sep='\t', header=T)
 VLP_metadata$Type <- factor(VLP_metadata$Type, levels=c('Infant', 'Mother'), ordered=T)
 
 RPKM_counts_VLP <- read.table('02.CLEAN_DATA/RPKM_counts_VLP.txt', sep='\t', header = T)
-RPKM_counts_VLP_filt <- RPKM_counts_VLP[(rowSums(RPKM_counts_VLP!=0) > 0.05*ncol(RPKM_counts_VLP)),  ]
-RPKM_counts_VLP_filt <- as.data.frame(t(RPKM_counts_VLP_filt))
+#RPKM_counts_VLP_filt <- RPKM_counts_VLP[(rowSums(RPKM_counts_VLP!=0) > 0.05*ncol(RPKM_counts_VLP)),  ]
+RPKM_counts_VLP_filt <- as.data.frame(t(RPKM_counts_VLP))
 # CLR-transformation
 my_pseudocount_normal=min(RPKM_counts_VLP_filt[RPKM_counts_VLP_filt!=0])/2
 RPKM_counts_VLP_filt_CLR<-decostand(RPKM_counts_VLP_filt, "clr", pseudocount=my_pseudocount_normal)
@@ -104,13 +163,12 @@ ggMarginal(gg, type="densigram", groupFill=T)
 dev.off()
 
 ### calculating the significance of separation:
-if (identical(row.names(microbiome), MGS_metadata$Short_sample_ID_bact)) {
-  bacteria_permanova <- adonis2(microbiome ~ Type +  bacterial_alpha_diversity + Clean_reads + DNA_CONC + metaphlan_unknown_perc, 
-                                data=MGS_metadata,  
-                                permutations = 999,
-                                method="euclidean",
-                                by = "margin")
-}
+ord2 <- metaMDS(microbiome, distance = "euclidean", k=1)
+
+separation_MGS <- mixed_models_taxa(MGS_metadata, 
+                                        "Short_sample_ID_bact", 
+                                        as.data.frame(scores(ord2, "sites")), 
+                                        c( "Type"), "dont_consider_time")
 
 #### NMDS for virome
 
@@ -166,14 +224,12 @@ dev.off()
 
 
 ### calculating the significance of separation:
-RPKM_counts_VLP <- RPKM_counts_VLP[VLP_metadata$Short_sample_ID,]
-if (identical(row.names(RPKM_counts_VLP), VLP_metadata$Short_sample_ID)) {
-  viruses_permanova <- adonis2(RPKM_counts_VLP ~ Type + viral_alpha_diversity + Clean_reads + DNA_CONC + bacterial_contamination_perc_reads, 
-                               data=VLP_metadata,  
-                               permutations = 999,
-                               method="euclidean",
-                               by = "margin")
-}
+ord2 <- metaMDS(RPKM_counts_VLP, distance = "euclidean", k=1)
+
+separation_VLP <- mixed_models_taxa(VLP_metadata, 
+                                    "Short_sample_ID", 
+                                    as.data.frame(scores(ord2, "sites")), 
+                                    c( "Type"), "dont_consider_time")
 
 #### NMDS for virome aggregated
 
