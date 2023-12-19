@@ -338,6 +338,34 @@ viral_contigs_metadata$order <- ifelse(grepl(";", viral_contigs_metadata$geNomad
 viral_contigs_metadata$family <- ifelse(grepl(";", viral_contigs_metadata$geNomad_taxonomy_new), 
                                 sapply(strsplit(viral_contigs_metadata$geNomad_taxonomy_new, ';'), "[", 7), NA)
 
+viral_contigs_metadata <- viral_contigs_metadata[viral_contigs_metadata$V1 %in% row.names(RPKM_counts_VLP),]
+
+viral_contigs_metadata_use <- viral_contigs_metadata[,c("V1", "VC", "CrAss", "dark_matter",
+                                                        "pVOGs", "Topology", "Vir_Ref", 
+                                                        "VirSorter", "N_pVOGs_per_10kb", "temperate",
+                                                        "length", "N_rbs_prot_J_50_90", "vir_rrna_contigs", 
+                                                        "excluding", "final_exclusion", "checkv_quality",
+                                                        "miuvig_quality", "completeness_checkV")]
+viral_contigs_metadata_use$VirusID_easy <- paste0("L", viral_contigs_metadata_use$length, '_LS', viral_contigs_metadata_use$temperate)
+colnames(viral_contigs_metadata_use)[grep('V1', colnames(viral_contigs_metadata_use))] <- 'Virus_scaffold'
+colnames(viral_contigs_metadata_use)[grep('VC', colnames(viral_contigs_metadata_use))] <- 'Viral_cluster'
+colnames(viral_contigs_metadata_use)[grep('CrAss', colnames(viral_contigs_metadata_use))] <- 'Inclusion5_CrAss'
+colnames(viral_contigs_metadata_use)[grep('dark_matter', colnames(viral_contigs_metadata_use))] <- 'Inclusion6_Dark_matter'
+colnames(viral_contigs_metadata_use)[grep('pVOGs$', colnames(viral_contigs_metadata_use))] <- 'Inclusion2_N_pVOGs'
+colnames(viral_contigs_metadata_use)[grep('N_pVOGs_per_10kb', colnames(viral_contigs_metadata_use))] <- 'Inclusion2_N_pVOGs_per_10kb'
+colnames(viral_contigs_metadata_use)[grep('Topology', colnames(viral_contigs_metadata_use))] <- 'Inclusion4_Topology'
+colnames(viral_contigs_metadata_use)[grep('Vir_Ref', colnames(viral_contigs_metadata_use))] <- 'Inclusion1_VirRef'
+colnames(viral_contigs_metadata_use)[grep('VirSorter', colnames(viral_contigs_metadata_use))] <- 'Inclusion3_VirSorter'
+colnames(viral_contigs_metadata_use)[grep('vir_rrna_contigs', colnames(viral_contigs_metadata_use))] <- 'rRNA_genes'
+
+viral_contigs_metadata_use <- viral_contigs_metadata_use[ , c("Virus_scaffold", "VirusID_easy", "length", 
+                                                            "Viral_cluster", "Inclusion1_VirRef", "Inclusion2_N_pVOGs",
+                                                            "Inclusion2_N_pVOGs_per_10kb", "Inclusion3_VirSorter",
+                                                            "Inclusion4_Topology", "Inclusion5_CrAss", "Inclusion6_Dark_matter",
+                                                            "N_rbs_prot_J_50_90", "rRNA_genes", "excluding", 
+                                                            "final_exclusion", "temperate","checkv_quality", 
+                                                            "miuvig_quality","completeness_checkV")]
+write.table(viral_contigs_metadata_use, "05.MANUSCRIPT/NEXT_PILOT_virus_scaffolds_metadata.txt", sep='\t', row.names = F, quote=F)
 
 # metaphlan 4 output for all the NEXT samples
 metaphlan4_output <- read.table('01.RAW_DATA/Metaphlan4_all_samples/LLNEXT_metaphlan_4_complete_10_02_2023.txt', sep='\t', header=T)
