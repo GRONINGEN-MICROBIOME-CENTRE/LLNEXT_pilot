@@ -20,14 +20,14 @@ library(ggtext)
 ##############################
 # Input data
 ##############################
-VLP_metadata <- read.table("02.CLEAN_DATA/VLP_metadata_with_phenos.txt", sep='\t', header=T, row.names = "Short_sample_ID")
+VLP_metadata <- read.table("02.CLEAN_DATA/VLP_metadata_final_10_05_2023.txt", sep='\t', header=T, row.names = "Short_sample_ID")
 VLP_metadata$Timepoint <- factor(VLP_metadata$Timepoint, levels = c("P7", "B",
                                                                     "M1", "M2", "M3",
                                                                     "M6", "M12"), ordered = T)
 VLP_metadata$Type <- as.factor(VLP_metadata$Type)
 VLP_metadata$Short_sample_ID <- row.names(VLP_metadata)
 
-MGS_metadata <- read.table("02.CLEAN_DATA/MGS_metadata_with_phenos.txt", sep='\t', header=T, row.names = "Short_sample_ID")
+MGS_metadata <- read.table("02.CLEAN_DATA/MGS_metadata_final_10_05_2023.txt", sep='\t', header=T, row.names = "Short_sample_ID")
 MGS_metadata$Timepoint <- factor(MGS_metadata$Timepoint, levels = c("P3", "P7", "B",
                                                                     "M1", "M2", "M3",
                                                                     "M6", "M9", "M12"), ordered = T)
@@ -537,7 +537,7 @@ Fig2C <- ggplot(data=virstability_M1_stat[virstability_M1_stat$Condition!='Not_r
                     ymax=q2_bootstrap, 
                     colour=Condition), 
                 width=0.3, alpha=0.9, size=0.5)  + 
-  labs(x="Timepoints", y="N detected vOTUs", fill='vOTUs', color="vOTUs", tag="c") + 
+  labs(x="Timepoint", y="N detected vOTUs", fill='vOTUs', color="vOTUs", tag="c") + 
   ggtitle("Infant virome") +
   theme_bw() + 
   theme(axis.title=element_text(size=7),
@@ -565,7 +565,7 @@ Fig2D <- ggplot(virstability_M1_abundance_stat[virstability_M1_abundance_stat$Co
                     ymax=q2_bootstrap, 
                     colour=Condition), 
                 width=0.3, alpha=0.9, size=0.5)  +
-  labs(x="Timepoints", y="Relative abundance",fill='vOTUs', color='vOTUs', tag = "d") + 
+  labs(x="Timepoint", y="Relative abundance",fill='vOTUs', color='vOTUs', tag = "d") + 
   ggtitle("Infant virome") +
   theme_bw() + 
   theme(axis.title=element_text(size=7),
@@ -593,7 +593,7 @@ Fig2E <- ggplot(virstability_P7_stat[virstability_P7_stat$Condition!='Not_retain
                     ymax=q2_bootstrap,
                     colour=Condition), 
                 width=0.3, alpha=0.9, size=0.5)  +
-  labs(x="Timepoints", y="N detected vOTUs",fill='vOTUs', color='vOTUs', tag="e") + 
+  labs(x="Timepoint", y="N detected vOTUs",fill='vOTUs', color='vOTUs', tag="e") + 
   ggtitle("Mother virome") +
   theme_bw() + 
   theme(axis.title=element_text(size=7),
@@ -621,7 +621,7 @@ Fig2F <- ggplot(virstability_P7_abundance_stat[virstability_P7_abundance_stat$Co
                     ymax=q2_bootstrap,
                     colour=Condition), 
                 width=0.3, alpha=0.9, size=0.5)  +
-  labs(x="Timepoints",y="Relative abundance",fill='vOTUs', color='vOTUs', tag = "f") + 
+  labs(x="Timepoint",y="Relative abundance",fill='vOTUs', color='vOTUs', tag = "f") + 
   ggtitle("Mother virome") +
   theme_bw() + 
   theme(axis.title=element_text(size=7),
@@ -747,7 +747,7 @@ Fig2 <- Fig2AB / Fig2CDEF / Fig2GH / Fig2IJ  + plot_layout(nrow=4, guides = "col
                                                                                                                     legend.box.margin=margin(-8,-10,-6,-10))
 
 
-pdf('Figures/Figure2/Fig2_1512.pdf', width=18/2.54, height=21/2.54)
+pdf('Figures/Figure2/Fig2_1812.pdf', width=18/2.54, height=21/2.54)
 Fig2
 dev.off()
 
@@ -886,7 +886,7 @@ Fig3E <- ggplot(sharedness_timepoints_melt, aes(Timepoint, value*100, fill=varia
 ##### Figure 3F #######
 Fig3F <- ggplot(sharedness_timepoints_iVM_mVM_melt, aes(Timepoint, value*100, fill=variable)) +
   geom_boxplot(aes(color=variable), outlier.shape = NA, alpha=0.5, lwd=0.3) +
-  labs (y="% infant vOTUs", x="Infant Timepoint", tag="f") + 
+  labs (y="% infant prophage-inclusive vOTUs", x="Infant Timepoint", tag="f") + 
   geom_sina(aes(color=variable), size=0.6,alpha=0.5) +
   annotate(geom="text", x=3, y=85, label="p-value=0.001, mean increase 4.9%", size=1.75) +
   ylim(0,88) +
@@ -922,7 +922,7 @@ Fig3 <- (Fig3ABC / Fig3DEF) + plot_layout(guides="keep") & theme(plot.title = el
                                                                    legend.margin=margin(-5,0,0,0),
                                                                    legend.box.margin=margin(-8,-10,-6,-10))
 
-pdf('Figures/Figure3/Fig3_1512.pdf', width=18/2.54, height=14/2.54)
+pdf('Figures/Figure3/Fig3_1812.pdf', width=18/2.54, height=14/2.54)
 Fig3 
 dev.off()
 
