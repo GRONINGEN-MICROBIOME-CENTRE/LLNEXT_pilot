@@ -18,7 +18,7 @@ Early development of the gut ecosystem is crucial for lifelong health. While inf
 
 ## Data availability
 Sample information, basic phenotypes, family structure and raw sequences are available in the [EGA archive](https://ega-archive.org/studies/EGAS00001005969). To access the data, please follow [these instructions](https://github.com/GRONINGEN-MICROBIOME-CENTRE/LLNEXT_pilot/blob/main/Data_Access_EGA.md).
-Virus scaffolds composing the virus database generated from the samples can be found at [FigShare](https://doi.org/10.6084/m9.figshare.23926593)
+Virus scaffolds composing the virus database generated from the samples can be found at [FigShare](https://doi.org/10.6084/m9.figshare.23926593). [Source data](https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-024-45257-4/MediaObjects/41467_2024_45257_MOESM6_ESM.zip) published with the paper also contains distance matrices for viral and bacterial strains, results of host prediction with iPHoP, MetaPhlAn4 abundance table for total metagenomes, and virus RPKM tables for MGS and VLP metaviromes.
 
 ## Code availability
 [Virome discovery pipeline:](https://github.com/GRONINGEN-MICROBIOME-CENTRE/LLNEXT_pilot/tree/main/Virome_discovery)
